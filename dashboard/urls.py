@@ -22,6 +22,11 @@ from .user_complete_dashboard import (
     UserSubscriptionActionAPIView,
     UserAgentManagementAPIView
 )
+from .ai_agent_dashboard import (
+    AIAgentDashboardAPIView,
+    CustomerProfilesAPIView,
+    ScheduledCallbacksAPIView
+)
 
 urlpatterns = [
     # General Dashboard
@@ -33,6 +38,11 @@ urlpatterns = [
     path('user/complete/', UserCompleteDashboardAPIView.as_view(), name='user-complete-dashboard'),
     path('user/subscription-action/', UserSubscriptionActionAPIView.as_view(), name='user-subscription-action'),
     path('user/agent-management/', UserAgentManagementAPIView.as_view(), name='user-agent-management'),
+    
+    # User Dashboard Main APIs
+    path('user/overview/', views.UserDashboardOverviewAPIView.as_view(), name='user-dashboard-overview'),
+    path('user/subscription-management/', views.UserSubscriptionManagementAPIView.as_view(), name='user-subscription-mgmt'),
+    path('user/call-history/', views.UserCallHistoryAPIView.as_view(), name='user-call-history'),
     
     # User Dashboard & Configuration (Individual)
     path('user/', UserDashboardAPIView.as_view(), name='user-dashboard'),
@@ -50,6 +60,11 @@ urlpatterns = [
     path('user/avatar/', UserAvatarUploadAPIView.as_view(), name='user-avatar'),
     path('user/notifications/', UserNotificationsAPIView.as_view(), name='user-notifications'),
     path('user/preferences/', UserPreferencesAPIView.as_view(), name='user-preferences'),
+    
+    # AI Agent Dashboard - Complete System
+    path('ai-agent/', AIAgentDashboardAPIView.as_view(), name='ai-agent-dashboard'),
+    path('ai-agent/customers/', CustomerProfilesAPIView.as_view(), name='ai-agent-customers'),
+    path('ai-agent/callbacks/', ScheduledCallbacksAPIView.as_view(), name='ai-agent-callbacks'),
     
     # Admin Only APIs
     path('admin/subscriptions/', views.AdminSubscriptionsAPIView.as_view(), name='admin-subscriptions'),

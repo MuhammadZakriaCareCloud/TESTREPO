@@ -622,3 +622,404 @@ class AdminUsersAPIView(APIView):
                 'per_page': limit
             }
         }, status=status.HTTP_200_OK)
+
+
+class UserDashboardOverviewAPIView(APIView):
+    """Complete user dashboard overview - sab kuch ek jagah"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        responses={
+            200: "Complete user dashboard overview",
+            401: "Unauthorized"
+        },
+        operation_description="Get complete user dashboard overview with all management options",
+        tags=['User Dashboard'],
+        security=[{'Bearer': []}]
+    )
+    def get(self, request):
+        user = request.user
+        today = timezone.now().date()
+        this_month = timezone.now().replace(day=1)
+        
+        # 1. USER PROFILE
+        user_profile = {
+            'id': str(user.id),
+            'email': user.email,
+            'full_name': user.get_full_name(),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone': user.phone,
+            'avatar': user.avatar.url if user.avatar else None,
+            'is_verified': user.is_verified,
+            'date_joined': user.date_joined.isoformat(),
+            'last_login': user.last_login.isoformat() if user.last_login else None
+        }
+        
+        # 2. SUBSCRIPTION INFO
+        subscription_info = None
+        try:
+            subscription = user.subscription
+            subscription_info = {
+                'id': str(subscription.id),
+                'plan_name': subscription.plan.name,
+                'plan_price': float(subscription.plan.price),
+                'status': subscription.status,
+                'days_remaining': subscription.days_remaining,
+                'current_period_start': subscription.current_period_start.isoformat(),
+                'current_period_end': subscription.current_period_end.isoformat(),
+                'cancel_at_period_end': subscription.cancel_at_period_end,
+                'features': subscription.plan.features,
+                'call_limit': subscription.plan.call_limit,
+                'agent_limit': subscription.plan.agent_limit
+            }
+        except Subscription.DoesNotExist:
+            subscription_info = {
+                'status': 'inactive',
+                'message': 'No active subscription. Please choose a plan.'
+            }
+        
+        # 3. CALL STATISTICS
+        user_calls = CallSession.objects.filter(user=user)
+        total_calls = user_calls.count()
+        this_month_calls = user_calls.filter(started_at__gte=this_month).count()
+        successful_calls = user_calls.filter(status='completed').count()
+        
+        call_stats = {
+            'total_calls': total_calls,
+            'this_month_calls': this_month_calls,
+            'successful_calls': successful_calls,
+            'success_rate': (successful_calls / total_calls * 100) if total_calls > 0 else 0,
+            'calls_remaining': subscription_info.get('call_limit', 0) - this_month_calls if subscription_info.get('call_limit', 0) > 0 else -1
+        }
+        
+        # 4. RECENT CALLS
+        recent_calls = user_calls.order_by('-started_at')[:5]
+        recent_calls_data = []
+        for call in recent_calls:
+            recent_calls_data.append({
+                'id': str(call.id),
+                'phone_number': call.phone_number,
+                'call_type': call.call_type,
+                'status': call.status,
+                'duration': call.call_duration_formatted,
+                'started_at': call.started_at.isoformat(),
+                'agent': call.agent.user.get_full_name() if call.agent else None,
+                'customer_satisfaction': call.customer_satisfaction
+            })
+        
+        # 5. BILLING INFO
+        billing_info = None
+        if subscription_info and subscription_info.get('status') != 'inactive':
+            recent_bills = BillingHistory.objects.filter(
+                subscription=user.subscription
+            ).order_by('-created_at')[:3]
+            
+            billing_info = {
+                'next_billing_date': subscription_info['current_period_end'],
+                'next_amount': subscription_info['plan_price'],
+                'recent_payments': [
+                    {
+                        'id': str(bill.id),
+                        'amount': float(bill.amount),
+                        'status': bill.status,
+                        'created_at': bill.created_at.isoformat(),
+                        'description': bill.description
+                    } for bill in recent_bills
+                ]
+            }
+        
+        # 6. QUICK ACTIONS
+        quick_actions = [
+            {
+                'id': 'start_call',
+                'title': 'Start Call',
+                'description': 'Make a new call',
+                'icon': 'phone',
+                'enabled': subscription_info.get('status') == 'active',
+                'url': '/api/calls/start-call/'
+            },
+            {
+                'id': 'view_subscription',
+                'title': 'Manage Subscription',
+                'description': 'View or upgrade your plan',
+                'icon': 'credit-card',
+                'enabled': True,
+                'url': '/api/dashboard/user/subscription-management/'
+            },
+            {
+                'id': 'call_history',
+                'title': 'Call History',
+                'description': 'View your call records',
+                'icon': 'history',
+                'enabled': True,
+                'url': '/api/dashboard/user/calls/'
+            },
+            {
+                'id': 'account_settings',
+                'title': 'Account Settings', 
+                'description': 'Manage your account',
+                'icon': 'settings',
+                'enabled': True,
+                'url': '/api/dashboard/user/settings/'
+            }
+        ]
+        
+        # 7. NOTIFICATIONS
+        notifications = []
+        if subscription_info.get('status') == 'inactive':
+            notifications.append({
+                'type': 'warning',
+                'title': 'No Active Subscription',
+                'message': 'Subscribe to a plan to start making calls',
+                'action_text': 'Choose Plan',
+                'action_url': '/api/subscriptions/plans/'
+            })
+        elif subscription_info.get('days_remaining', 0) <= 3:
+            notifications.append({
+                'type': 'info',
+                'title': 'Subscription Expiring',
+                'message': f'Your subscription expires in {subscription_info.get("days_remaining")} days',
+                'action_text': 'Renew',
+                'action_url': '/api/subscriptions/current/'
+            })
+        
+        dashboard_data = {
+            'user_profile': user_profile,
+            'subscription': subscription_info,
+            'call_statistics': call_stats,
+            'recent_calls': recent_calls_data,
+            'billing_info': billing_info,
+            'quick_actions': quick_actions,
+            'notifications': notifications,
+            'summary': {
+                'account_status': subscription_info.get('status', 'inactive'),
+                'calls_today': CallSession.objects.filter(user=user, started_at__date=today).count(),
+                'total_spent': sum(float(bill.amount) for bill in BillingHistory.objects.filter(subscription__user=user, status='paid')) if subscription_info.get('status') != 'inactive' else 0
+            }
+        }
+        
+        return Response(dashboard_data, status=status.HTTP_200_OK)
+
+
+class UserSubscriptionManagementAPIView(APIView):
+    """User subscription management"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        responses={
+            200: "User subscription management data",
+            401: "Unauthorized"
+        },
+        operation_description="Get user subscription management options",
+        tags=['User Dashboard'],
+        security=[{'Bearer': []}]
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Current subscription
+        current_subscription = None
+        try:
+            subscription = user.subscription
+            current_subscription = {
+                'id': str(subscription.id),
+                'plan': {
+                    'name': subscription.plan.name,
+                    'price': float(subscription.plan.price),
+                    'interval': subscription.plan.interval,
+                    'features': subscription.plan.features,
+                    'call_limit': subscription.plan.call_limit,
+                    'agent_limit': subscription.plan.agent_limit
+                },
+                'status': subscription.status,
+                'current_period_start': subscription.current_period_start.isoformat(),
+                'current_period_end': subscription.current_period_end.isoformat(),
+                'days_remaining': subscription.days_remaining,
+                'cancel_at_period_end': subscription.cancel_at_period_end
+            }
+        except Subscription.DoesNotExist:
+            pass
+        
+        # Available plans
+        from subscriptions.models import SubscriptionPlan
+        available_plans = SubscriptionPlan.objects.filter(is_active=True)
+        plans_data = []
+        
+        for plan in available_plans:
+            is_current = current_subscription and current_subscription['plan']['name'] == plan.name
+            plans_data.append({
+                'id': str(plan.id),
+                'name': plan.name,
+                'price': float(plan.price),
+                'interval': plan.interval,
+                'features': plan.features,
+                'call_limit': plan.call_limit,
+                'agent_limit': plan.agent_limit,
+                'is_current': is_current,
+                'is_popular': plan.name.lower() == 'professional',
+                'stripe_price_id': plan.stripe_price_id,
+                'can_select': not is_current
+            })
+        
+        # Usage for current period
+        usage_data = None
+        if current_subscription:
+            usage = UsageMetrics.objects.filter(
+                subscription=user.subscription
+            ).order_by('-period_start').first()
+            
+            if usage:
+                usage_data = {
+                    'calls_made': usage.calls_made,
+                    'call_minutes': usage.call_minutes,
+                    'api_requests': usage.api_requests,
+                    'storage_used': usage.storage_used,
+                    'agents_used': usage.agents_used,
+                    'period_start': usage.period_start.isoformat(),
+                    'period_end': usage.period_end.isoformat()
+                }
+        
+        return Response({
+            'current_subscription': current_subscription,
+            'available_plans': plans_data,
+            'current_usage': usage_data,
+            'can_upgrade': current_subscription is not None,
+            'can_cancel': current_subscription and current_subscription['status'] == 'active'
+        }, status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'action': openapi.Schema(type=openapi.TYPE_STRING, enum=['create', 'upgrade', 'cancel']),
+                'plan_id': openapi.Schema(type=openapi.TYPE_STRING, description='Plan ID for create/upgrade')
+            },
+            required=['action']
+        ),
+        responses={
+            200: "Subscription action completed",
+            400: "Bad request"
+        },
+        operation_description="Perform subscription actions",
+        tags=['User Dashboard'],
+        security=[{'Bearer': []}]
+    )
+    def post(self, request):
+        user = request.user
+        action = request.data.get('action')
+        plan_id = request.data.get('plan_id')
+        
+        if action == 'create':
+            if not plan_id:
+                return Response({'error': 'Plan ID required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                from subscriptions.models import SubscriptionPlan
+                plan = SubscriptionPlan.objects.get(id=plan_id)
+                
+                # Create subscription (simplified for demo)
+                subscription = Subscription.objects.create(
+                    user=user,
+                    plan=plan,
+                    status='active',
+                    current_period_start=timezone.now(),
+                    current_period_end=timezone.now() + timedelta(days=30)
+                )
+                
+                return Response({
+                    'message': 'Subscription created successfully',
+                    'subscription_id': str(subscription.id)
+                }, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif action == 'cancel':
+            try:
+                subscription = user.subscription
+                subscription.cancel_at_period_end = True
+                subscription.save()
+                
+                return Response({
+                    'message': 'Subscription will be cancelled at period end'
+                }, status=status.HTTP_200_OK)
+                
+            except Subscription.DoesNotExist:
+                return Response({'error': 'No subscription found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserCallHistoryAPIView(APIView):
+    """User call history with filters"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        parameters=[
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('status', openapi.IN_QUERY, description="Filter by status", type=openapi.TYPE_STRING),
+            openapi.Parameter('date_from', openapi.IN_QUERY, description="From date (YYYY-MM-DD)", type=openapi.TYPE_STRING),
+            openapi.Parameter('date_to', openapi.IN_QUERY, description="To date (YYYY-MM-DD)", type=openapi.TYPE_STRING)
+        ],
+        responses={
+            200: "User call history",
+            401: "Unauthorized"
+        },
+        operation_description="Get user call history with filtering",
+        tags=['User Dashboard'],
+        security=[{'Bearer': []}]
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Filter parameters
+        page = int(request.query_params.get('page', 1))
+        status_filter = request.query_params.get('status')
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        
+        # Base queryset
+        calls = CallSession.objects.filter(user=user).order_by('-started_at')
+        
+        # Apply filters
+        if status_filter:
+            calls = calls.filter(status=status_filter)
+        if date_from:
+            calls = calls.filter(started_at__date__gte=date_from)
+        if date_to:
+            calls = calls.filter(started_at__date__lte=date_to)
+        
+        # Pagination
+        limit = 20
+        offset = (page - 1) * limit
+        total_count = calls.count()
+        calls = calls[offset:offset + limit]
+        
+        call_data = []
+        for call in calls:
+            call_data.append({
+                'id': str(call.id),
+                'phone_number': call.phone_number,
+                'call_type': call.call_type,
+                'status': call.status,
+                'started_at': call.started_at.isoformat(),
+                'ended_at': call.ended_at.isoformat() if call.ended_at else None,
+                'duration': call.call_duration_formatted,
+                'customer_satisfaction': call.customer_satisfaction,
+                'recording_url': call.recording_url,
+                'agent': {
+                    'name': call.agent.user.get_full_name(),
+                    'employee_id': call.agent.employee_id
+                } if call.agent else None
+            })
+        
+        return Response({
+            'calls': call_data,
+            'pagination': {
+                'current_page': page,
+                'total_count': total_count,
+                'total_pages': (total_count + limit - 1) // limit,
+                'per_page': limit
+            }
+        }, status=status.HTTP_200_OK)

@@ -211,3 +211,23 @@ class AgentPerformance(models.Model):
     
     def __str__(self):
         return f"{self.agent.user.get_full_name()} - {self.date}"
+
+# Import AI Agent models
+from .ai_agent_models import (
+    AIAgent,
+    CustomerProfile,
+    CallSession as AICallSession,
+    AIAgentTraining,
+    ScheduledCallback
+)
+
+# Add to __all__ if exists
+__all__ = [
+    'Agent',
+    'AgentPerformance',
+    'AIAgent',
+    'CustomerProfile', 
+    'AICallSession',
+    'AIAgentTraining',
+    'ScheduledCallback'
+]
