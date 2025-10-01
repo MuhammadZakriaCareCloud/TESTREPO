@@ -11,6 +11,8 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from accounts.models import User
 from accounts.serializers import UserSerializer
 from .serializers import (
@@ -136,11 +138,13 @@ def login_view(request):
     ),
     responses={
         200: "Logout successful",
-        400: "Invalid token"
+        400: "Invalid token",
+        401: "Unauthorized - Invalid or missing JWT token"
     },
-    operation_description="Logout user and blacklist refresh token",
+    operation_description="Logout user and blacklist refresh token. Requires JWT Bearer token authentication.",
     operation_summary="User Logout",
-    tags=['Authentication']
+    tags=['Authentication'],
+    security=[{'Bearer': []}]
 )
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -173,6 +177,7 @@ def logout_view(request):
     operation_summary="Change Password",
     tags=['Authentication']
 )
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def change_password_view(request):
