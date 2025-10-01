@@ -1,8 +1,28 @@
-# Django Backend
+# 🚀 Django Backend API
 
-Modern Django REST API backend with JWT authentication, user management, and role-based access control.
+Complete Django REST API backend with authentication, role-based access control, and user management.
 
-## Features
+## ⚡ Quick Start
+
+### Windows:
+```bash
+git clone <repository-url>
+cd TestRepo
+setup.bat
+```
+
+### Linux/Mac:
+```bash
+git clone <repository-url>
+cd TestRepo
+chmod +x setup.sh
+./setup.sh
+```
+
+### Manual Setup:
+See [SETUP.md](SETUP.md) for detailed instructions.
+
+## 🎯 Features
 
 - **Custom User Model** with email authentication
 - **JWT Authentication** with access/refresh tokens
