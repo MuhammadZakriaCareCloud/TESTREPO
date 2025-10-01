@@ -10,6 +10,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Admin'
         USER = 'user', 'User'
+        AGENT = 'agent', 'Agent'
     
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
@@ -38,6 +39,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def full_name(self):
+        return f'{self.first_name} {self.last_name}'.strip()
+    
+    def get_full_name(self):
+        """Return the user's full name"""
         return f'{self.first_name} {self.last_name}'.strip()
 
 

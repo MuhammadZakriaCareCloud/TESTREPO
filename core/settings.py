@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'authentication',
+    'subscriptions',
+    'calls',
+    'agents',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -207,6 +211,21 @@ CSRF_EXEMPT_URLS = [
 
 # Frontend URL for password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
+# Stripe Configuration
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_...')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_...')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_...')
+STRIPE_LIVE_MODE = config('STRIPE_LIVE_MODE', default=False, cast=bool)
+
+# Twilio Configuration
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+
+# HomeAI Configuration
+HOMEAI_API_KEY = config('HOMEAI_API_KEY', default='')
+HOMEAI_API_URL = config('HOMEAI_API_URL', default='https://api.homeai.com/v1')
 
 # Swagger/OpenAPI Configuration
 SWAGGER_SETTINGS = {

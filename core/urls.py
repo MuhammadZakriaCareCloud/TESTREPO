@@ -32,6 +32,10 @@ urlpatterns = [
     # API URLs
     path('api/auth/', include('authentication.urls')),
     path('api/accounts/', include('accounts.urls')),
+    path('api/dashboard/', include('dashboard.urls')),
+    path('api/subscriptions/', include('subscriptions.urls')),
+    path('api/calls/', include('calls.urls')),
+    path('api/agents/', include('agents.urls')),
     
     # Allauth URLs
     path('accounts/', include('allauth.urls')),

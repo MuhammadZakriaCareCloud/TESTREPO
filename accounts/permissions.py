@@ -12,6 +12,17 @@ class IsAdmin(BasePermission):
         )
 
 
+class IsAgent(BasePermission):
+    """Permission class for agent users only"""
+    
+    def has_permission(self, request, view):
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.role == 'agent'
+        )
+
+
 class IsAdminOrOwner(BasePermission):
     """Permission class for admin users or object owner"""
     

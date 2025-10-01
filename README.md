@@ -1,6 +1,6 @@
-# 🚀 Django Backend API
+# Call Center Dashboard Backend
 
-Complete Django REST API backend with authentication, role-based access control, and user management.
+A modern Django REST API backend for a call center/dashboard application with role-based access control, Stripe-powered subscriptions, Twilio call integration, and HomeAI assistance.
 
 ## ⚡ Quick Start
 
