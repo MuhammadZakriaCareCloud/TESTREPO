@@ -1,6 +1,8 @@
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.tokens import default_token_generator
@@ -26,6 +28,35 @@ def get_tokens_for_user(user):
     }
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=RegisterSerializer,
+    responses={
+        201: openapi.Response(
+            description="User registered successfully",
+            examples={
+                "application/json": {
+                    "message": "User registered successfully",
+                    "user": {
+                        "id": 1,
+                        "email": "user@example.com",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "role": "user"
+                    },
+                    "tokens": {
+                        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                    }
+                }
+            }
+        ),
+        400: "Bad request - validation errors"
+    },
+    operation_description="Register a new user account",
+    operation_summary="User Registration",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def register_view(request):
@@ -47,6 +78,35 @@ def register_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=LoginSerializer,
+    responses={
+        200: openapi.Response(
+            description="Login successful",
+            examples={
+                "application/json": {
+                    "message": "Login successful",
+                    "user": {
+                        "id": 1,
+                        "email": "user@example.com",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "role": "user"
+                    },
+                    "tokens": {
+                        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                    }
+                }
+            }
+        ),
+        400: "Bad request - Invalid credentials"
+    },
+    operation_description="Login with email and password to get JWT tokens",
+    operation_summary="User Login",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def login_view(request):
@@ -66,6 +126,22 @@ def login_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token to blacklist')
+        }
+    ),
+    responses={
+        200: "Logout successful",
+        400: "Invalid token"
+    },
+    operation_description="Logout user and blacklist refresh token",
+    operation_summary="User Logout",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def logout_view(request):
@@ -86,6 +162,17 @@ def logout_view(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=ChangePasswordSerializer,
+    responses={
+        200: "Password changed successfully",
+        400: "Bad request - Invalid old password or validation errors"
+    },
+    operation_description="Change user password with old password verification",
+    operation_summary="Change Password",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def change_password_view(request):
@@ -111,6 +198,17 @@ def change_password_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=PasswordResetSerializer,
+    responses={
+        200: "Password reset email sent (if account exists)",
+        400: "Bad request - Invalid email format"
+    },
+    operation_description="Request password reset link via email",
+    operation_summary="Password Reset Request",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def password_reset_view(request):
@@ -151,6 +249,17 @@ def password_reset_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=PasswordResetConfirmSerializer,
+    responses={
+        200: "Password reset successful",
+        400: "Invalid token or validation errors"
+    },
+    operation_description="Confirm password reset with token from email",
+    operation_summary="Password Reset Confirm",
+    tags=['Authentication']
+)
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def password_reset_confirm_view(request):

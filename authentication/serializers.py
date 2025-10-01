@@ -5,12 +5,27 @@ from accounts.models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        write_only=True, 
+        validators=[validate_password],
+        help_text="Enter a strong password (minimum 8 characters)",
+        style={'input_type': 'password'}
+    )
+    password_confirm = serializers.CharField(
+        write_only=True,
+        help_text="Confirm your password",
+        style={'input_type': 'password'}
+    )
     
     class Meta:
         model = User
         fields = ['email', 'password', 'password_confirm', 'first_name', 'last_name', 'phone']
+        extra_kwargs = {
+            'email': {'help_text': 'Enter your email address'},
+            'first_name': {'help_text': 'Enter your first name', 'required': False},
+            'last_name': {'help_text': 'Enter your last name', 'required': False},
+            'phone': {'help_text': 'Enter your phone number (optional)', 'required': False},
+        }
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -25,8 +40,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField()
+    email = serializers.EmailField(help_text="Enter your email address")
+    password = serializers.CharField(
+        help_text="Enter your password",
+        style={'input_type': 'password'}
+    )
     
     def validate(self, attrs):
         email = attrs.get('email')
@@ -49,9 +67,22 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, validators=[validate_password])
-    new_password_confirm = serializers.CharField(required=True)
+    old_password = serializers.CharField(
+        required=True,
+        help_text="Enter your current password",
+        style={'input_type': 'password'}
+    )
+    new_password = serializers.CharField(
+        required=True, 
+        validators=[validate_password],
+        help_text="Enter your new password (minimum 8 characters)",
+        style={'input_type': 'password'}
+    )
+    new_password_confirm = serializers.CharField(
+        required=True,
+        help_text="Confirm your new password",
+        style={'input_type': 'password'}
+    )
     
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
@@ -60,7 +91,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class PasswordResetSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(help_text="Enter your email address to receive reset link")
     
     def validate_email(self, value):
         try:
@@ -72,10 +103,17 @@ class PasswordResetSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    new_password = serializers.CharField(validators=[validate_password])
-    new_password_confirm = serializers.CharField()
-    token = serializers.CharField()
-    uidb64 = serializers.CharField()
+    new_password = serializers.CharField(
+        validators=[validate_password],
+        help_text="Enter your new password",
+        style={'input_type': 'password'}
+    )
+    new_password_confirm = serializers.CharField(
+        help_text="Confirm your new password",
+        style={'input_type': 'password'}
+    )
+    token = serializers.CharField(help_text="Reset token from email")
+    uidb64 = serializers.CharField(help_text="User ID from email")
     
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
