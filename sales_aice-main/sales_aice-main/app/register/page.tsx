@@ -35,10 +35,18 @@ const RegisterPage = () => {
   // Function to verify username availability with debounce
   const verifyUsernameAvailability = debounce(async (username: string) => {
     try {
-      console.log("verifying username");
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-username/`, {
+      // console.log("verifying username");
+      // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-username/`, {
+      //   username: username,
+      // });
+
+       console.log("verifying username");
+      const response = await axiosInstance.post('/api/accounts/check-username/', {
         username: username,
       });
+
+     
+      
 
       if (response.data.taken) {
         setUsernameMessage('');
@@ -135,7 +143,7 @@ const RegisterPage = () => {
       //   password: password,
       // });
 
-      const response = await axiosInstance.post('/api/accounts/register/', {
+      const response = await axiosInstance.post('/api/auth/register/', {
         username: username,
         email: email,
         password: password,

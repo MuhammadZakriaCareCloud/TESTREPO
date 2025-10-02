@@ -66,6 +66,9 @@ function transformDashboard(api: ApiDashboardPayload): AdminDashboardData {
 // ---------- Real API call via axiosInstance ----------
 async function fetchAdminDashboard(): Promise<AdminDashboardData> {
   const { data } = await axiosInstance.get<ApiDashboardPayload>('/api/accounts/admin/dashboard/');
+   // The mapping happens here:
+  // - data is of type ApiDashboardPayload (API response)
+  // - transformDashboard(data) converts it to AdminDashboardData (internal type)
   return transformDashboard(data);
 }
 

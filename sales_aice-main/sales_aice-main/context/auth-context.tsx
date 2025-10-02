@@ -76,16 +76,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [accessToken]);
 
   // ---- Auth actions ----
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {debugger
     try {
-      const { data } = await axiosInstance.post<{ token?: string; user?: UserType; status?: string }>(
-        '/api/accounts/login/',
+      const { data } = await axiosInstance.post<{ tokens?: any; user?: UserType; status?: string }>(
+        '/api/auth/login/',
         { email, password }
       );
 
-      if (data?.token && data?.user) {
+      if (data?.tokens.access && data?.user) {
         setSessionExpired(false);
-        setAccessToken(data.token);
+        setAccessToken(data.tokens.access);
         setUser(data.user);
 
         // Redirect by role
