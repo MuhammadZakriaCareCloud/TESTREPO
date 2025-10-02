@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await axiosInstance.post('/api/accounts/logout/', {});
+      await axiosInstance.post('/api/auth/logout/', {refresh:''});
     } catch {
       // even if server fails, clear local state
     } finally {
