@@ -1,7 +1,7 @@
 // lib/axiosInstance.ts
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = 'http://localhost:8000';//process.env.NEXT_PUBLIC_API_URL;
 
 // ---- Token plumbing (set by your Auth Context) ----
 let getAccessToken: () => string | null = () => {

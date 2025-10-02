@@ -6,6 +6,7 @@ import { Loader2, Loader } from "lucide-react";
 import Image from 'next/image';
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
+import { axiosInstance } from '@/utils/axiosInstance';
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -77,7 +78,10 @@ const RegisterPage = () => {
   const verifyEmailAvailability = async (email: string) => {
     try {
       console.log("verifying email");
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-email/`, {
+      // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-email/`, {
+      //   email: email,
+      // });
+      const response = await axiosInstance.post('/api/accounts/check-email/', {
         email: email,
       });
 
@@ -125,11 +129,19 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/register/`, {
+      // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/register/`, {
+      //   username: username,
+      //   email: email,
+      //   password: password,
+      // });
+
+      const response = await axiosInstance.post('/api/accounts/register/', {
         username: username,
         email: email,
         password: password,
       });
+
+      
 
       if (response.data) {
         toast.success(`Verification email sent to ${email}`, {

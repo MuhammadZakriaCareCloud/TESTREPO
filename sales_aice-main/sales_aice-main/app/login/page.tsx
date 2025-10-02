@@ -33,7 +33,7 @@ const LoginPage = () => {
     }
   }, [user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {debugger
     e.preventDefault();
     setLoading(true);
     setError('');  // Reset previous errors
