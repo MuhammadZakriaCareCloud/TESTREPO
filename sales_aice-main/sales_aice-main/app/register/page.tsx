@@ -33,7 +33,7 @@ const RegisterPage = () => {
   };
 
   // Function to verify username availability with debounce
-  const verifyUsernameAvailability = debounce(async (username: string) => {
+  const verifyUsernameAvailability = debounce(async (username: string) => {debugger
     try {
       // console.log("verifying username");
       // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-username/`, {
@@ -41,14 +41,14 @@ const RegisterPage = () => {
       // });
 
        console.log("verifying username");
-      const response = await axiosInstance.post('/api/accounts/check-username/', {
-        username: username,
+      const response = await axiosInstance.post('/api/auth/user-name-exist/', {
+        user_name: username,
       });
 
      
       
 
-      if (response.data.taken) {
+      if (response.data.user_name_exists) {
         setUsernameMessage('');
         setUsernameError('Username is already taken');
       } else {
@@ -83,17 +83,17 @@ const RegisterPage = () => {
   };
  
 
-  const verifyEmailAvailability = async (email: string) => {
+  const verifyEmailAvailability = async (email_exist: string) => {debugger
     try {
       console.log("verifying email");
       // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/check-email/`, {
       //   email: email,
       // });
-      const response = await axiosInstance.post('/api/accounts/check-email/', {
-        email: email,
+      const response = await axiosInstance.post('/api/auth/user-email-exist/', {
+        email_exist: email_exist,
       });
 
-      if (response.data.taken) {
+      if (response.data.email_exist) {
         setEmailError('Email is already in use.');
       } else {
         setEmailError('');
@@ -103,7 +103,7 @@ const RegisterPage = () => {
     }
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: any) => {debugger
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -144,7 +144,7 @@ const RegisterPage = () => {
       // });
 
       const response = await axiosInstance.post('/api/auth/register/', {
-        username: username,
+        user_name: username,
         email: email,
         password: password,
       });

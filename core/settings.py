@@ -87,7 +87,7 @@ DATABASES = {
         'USER': 'postgres',  # or 'postgres' if that was a typo
         'PASSWORD': 'Trivision8990',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 
