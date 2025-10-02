@@ -9,4 +9,6 @@ urlpatterns = [
     path('change-password/', ChangePasswordAPIView.as_view(), name='change-password'),
     path('password-reset/', views.password_reset_view, name='password-reset'),
     path('password-reset-confirm/', views.password_reset_confirm_view, name='password-reset-confirm'),
+    path('user-email-exist/', views.check_user_Email_exists_view, name='user-email-exist'),
+    path('user-name-exist/', views.check_user_name_exists_view, name='user-name-exist'),
 ]

@@ -11,31 +11,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         help_text="Enter a strong password (minimum 8 characters)",
         style={'input_type': 'password'}
     )
-    password_confirm = serializers.CharField(
-        write_only=True,
-        help_text="Confirm your password",
-        style={'input_type': 'password'}
-    )
+    # password_confirm = serializers.CharField(
+    #     write_only=True,
+    #     help_text="Confirm your password",
+    #     style={'input_type': 'password'}
+    # )
     
     class Meta:
         model = User
-        fields = ['email', 'password', 'password_confirm', 'first_name', 'last_name', 'phone']
+        fields = ['email', 'password','user_name']
         extra_kwargs = {
             'email': {'help_text': 'Enter your email address'},
-            'first_name': {'help_text': 'Enter your first name', 'required': False},
-            'last_name': {'help_text': 'Enter your last name', 'required': False},
-            'phone': {'help_text': 'Enter your phone number (optional)', 'required': False},
+            # 'first_name': {'help_text': 'Enter your first name', 'required': False},
+            # 'last_name': {'help_text': 'Enter your last name', 'required': False},
+            # 'phone': {'help_text': 'Enter your phone number (optional)', 'required': False},
+            'user_name': {'help_text': 'Enter your user name', 'required': True},
         }
     
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match.")
-        return attrs
+    # def validate(self, attrs):
+    #     if attrs['password'] != attrs['password_confirm']:
+    #         raise serializers.ValidationError("Passwords don't match.")
+    #     return attrs
     
     def create(self, validated_data):
-        validated_data.pop('password_confirm')
+        # validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create_user(password=password, **validated_data)
+        user = User.objects.create_user(**validated_data,password=password)
         return user
 
 
@@ -118,4 +119,34 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError("Passwords don't match.")
+        return attrs
+
+class UserNameExistenceCheckSerializer(serializers.Serializer):
+    user_name = serializers.CharField(required=False, help_text="Username to check if exists")
+    
+
+    def validate(self, attrs):
+        user_name = attrs.get('user_name', None)
+
+        user_name_exists = False
+
+        if user_name:
+            user_name_exists = User.objects.filter(user_name=user_name).exists()
+
+        attrs['user_name_exists'] = user_name_exists
+        return attrs
+    
+class UserEmailExistenceCheckSerializer(serializers.Serializer):
+     email = serializers.EmailField(required=False, help_text="Email to check if exists")
+    
+
+     def validate(self, attrs):
+        email = attrs.get('email', None)
+
+        email_exists = False
+
+        if email:
+            email_exists = User.objects.filter(email=email).exists()
+
+        attrs['email_exists'] = email_exists
         return attrs

@@ -17,7 +17,7 @@ from accounts.models import User
 from accounts.serializers import UserSerializer
 from .serializers import (
     RegisterSerializer, LoginSerializer, ChangePasswordSerializer,
-    PasswordResetSerializer, PasswordResetConfirmSerializer
+    PasswordResetSerializer, PasswordResetConfirmSerializer, UserEmailExistenceCheckSerializer, UserNameExistenceCheckSerializer
 )
 
 
@@ -291,5 +291,64 @@ def password_reset_confirm_view(request):
             return Response({
                 'error': 'Invalid token'
             }, status=status.HTTP_400_BAD_REQUEST)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@swagger_auto_schema(
+    method='post',
+    request_body=UserEmailExistenceCheckSerializer,
+    responses={
+        200: openapi.Response(
+            description="User Email existence check results",
+            examples={
+                "application/json": {
+                    "email_exists": True,
+                }
+            }
+        ),
+        400: "Bad request - validation errors"
+    },
+    operation_description="Check if email or username already exists in the system",
+    operation_summary="Check User Existence",
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def check_user_Email_exists_view(request):
+    serializer = UserEmailExistenceCheckSerializer(data=request.data)
+    if serializer.is_valid():
+        # validation ne email_exists and user_name_exists attrs add kar diye hain
+        return Response({
+            'email_exists': serializer.validated_data.get('email_exists', False),
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=UserNameExistenceCheckSerializer,
+    responses={
+        200: openapi.Response(
+            description="User Name existence check results",
+            examples={
+                "application/json": {
+                    "user_name_exists": True
+                }
+            }
+        ),
+        400: "Bad request - validation errors"
+    },
+    operation_description="Check i username already exists in the system",
+    operation_summary="Check User name Existence",
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def check_user_name_exists_view(request):
+    serializer = UserNameExistenceCheckSerializer(data=request.data)
+    if serializer.is_valid():
+        # validation ne email_exists and user_name_exists attrs add kar diye hain
+        return Response({
+            'user_name_exists': serializer.validated_data.get('user_name_exists', False),
+        }, status=status.HTTP_200_OK)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
