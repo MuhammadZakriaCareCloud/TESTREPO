@@ -42,7 +42,7 @@ class AIAgentListCreateAPIView(generics.ListCreateAPIView):
             401: "Unauthorized"
         },
         operation_description="Get list of AI Agents - Admin sees all, Client sees only their agent",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         agents = self.get_queryset()
@@ -105,7 +105,7 @@ class AIAgentListCreateAPIView(generics.ListCreateAPIView):
             409: "Agent already exists"
         },
         operation_description="Create new AI Agent for client",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -209,7 +209,7 @@ class AIAgentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             404: "Agent not found"
         },
         operation_description="Get detailed information about specific AI Agent",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         agent = self.get_object()
@@ -300,7 +300,7 @@ class AIAgentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             404: "Agent not found"
         },
         operation_description="Update AI Agent details",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def put(self, request, *args, **kwargs):
         agent = self.get_object()
@@ -362,7 +362,7 @@ class AIAgentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             404: "Agent not found"
         },
         operation_description="Partially update AI Agent",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def patch(self, request, *args, **kwargs):
         return self.put(request, *args, **kwargs)
@@ -374,7 +374,7 @@ class AIAgentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             400: "Cannot delete agent with active calls"
         },
         operation_description="Delete AI Agent and all related data",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def delete(self, request, *args, **kwargs):
         agent = self.get_object()
@@ -457,7 +457,7 @@ class AIAgentBulkActionsAPIView(APIView):
         ),
         responses={200: "Bulk action completed"},
         operation_description="Perform bulk actions on AI Agents - Admin only",
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def post(self, request):
         data = request.data
@@ -543,7 +543,7 @@ class AIAgentStatsAPIView(APIView):
             openapi.Parameter('time_period', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=['today', 'week', 'month', 'all']),
         ],
         responses={200: "AI Agent statistics"},
-        tags=['AI Agent CRUD']
+        tags=['AI Agents']
     )
     def get(self, request):
         user = request.user

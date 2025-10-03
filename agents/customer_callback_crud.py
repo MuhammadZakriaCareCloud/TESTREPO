@@ -37,7 +37,7 @@ class CustomerProfileCRUDAPIView(generics.ListCreateAPIView):
             openapi.Parameter('search', openapi.IN_QUERY, type=openapi.TYPE_STRING, description='Search by name or phone'),
         ],
         responses={200: "List of customer profiles"},
-        tags=['Customer Profile CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         customers = self.get_queryset()
@@ -116,7 +116,7 @@ class CustomerProfileCRUDAPIView(generics.ListCreateAPIView):
             required=['phone_number']
         ),
         responses={201: "Customer profile created"},
-        tags=['Customer Profile CRUD']
+        tags=['AI Agents']
     )
     def post(self, request, *args, **kwargs):
         try:
@@ -171,12 +171,11 @@ class CustomerProfileCRUDAPIView(generics.ListCreateAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CustomerProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+class CustomerProfileDetailAPIView(APIView):
     """
     Detailed CRUD operations for specific customer profile
     """
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'id'
     
     def get_object(self):
         customer_id = self.kwargs.get('id')
@@ -190,7 +189,7 @@ class CustomerProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     
     @swagger_auto_schema(
         responses={200: "Customer profile details"},
-        tags=['Customer Profile CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         customer = self.get_object()
@@ -276,7 +275,7 @@ class CustomerProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             }
         ),
         responses={200: "Customer profile updated"},
-        tags=['Customer Profile CRUD']
+        tags=['AI Agents']
     )
     def put(self, request, *args, **kwargs):
         customer = self.get_object()
@@ -325,7 +324,7 @@ class CustomerProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     
     @swagger_auto_schema(
         responses={204: "Customer profile deleted"},
-        tags=['Customer Profile CRUD']
+        tags=['AI Agents']
     )
     def delete(self, request, *args, **kwargs):
         customer = self.get_object()
@@ -378,7 +377,7 @@ class ScheduledCallbackCRUDAPIView(generics.ListCreateAPIView):
             openapi.Parameter('today', openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN),
         ],
         responses={200: "List of scheduled callbacks"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         callbacks = self.get_queryset()
@@ -452,7 +451,7 @@ class ScheduledCallbackCRUDAPIView(generics.ListCreateAPIView):
             required=['customer_phone', 'scheduled_datetime', 'reason']
         ),
         responses={201: "Callback scheduled successfully"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def post(self, request, *args, **kwargs):
         try:
@@ -507,12 +506,11 @@ class ScheduledCallbackCRUDAPIView(generics.ListCreateAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ScheduledCallbackDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+class ScheduledCallbackDetailAPIView(APIView):
     """
     Detailed CRUD operations for specific scheduled callback
     """
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'id'
     
     def get_object(self):
         callback_id = self.kwargs.get('id')
@@ -526,7 +524,7 @@ class ScheduledCallbackDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     
     @swagger_auto_schema(
         responses={200: "Callback details"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def get(self, request, *args, **kwargs):
         callback = self.get_object()
@@ -576,7 +574,7 @@ class ScheduledCallbackDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             }
         ),
         responses={200: "Callback updated successfully"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def put(self, request, *args, **kwargs):
         callback = self.get_object()
@@ -624,7 +622,7 @@ class ScheduledCallbackDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     
     @swagger_auto_schema(
         responses={204: "Callback deleted successfully"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def delete(self, request, *args, **kwargs):
         callback = self.get_object()
@@ -687,7 +685,7 @@ class CallbackBulkActionsAPIView(APIView):
             required=['action']
         ),
         responses={200: "Bulk action completed"},
-        tags=['Scheduled Callback CRUD']
+        tags=['AI Agents']
     )
     def post(self, request):
         try:

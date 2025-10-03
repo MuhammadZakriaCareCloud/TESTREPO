@@ -1,14 +1,13 @@
 from django.urls import path
 from .admin_dashboard_api import AdminDashboardAPIView
 from .user_dashboard_enhanced import UserDashboardAPIView
-from .comprehensive_dashboard import ComprehensiveDashboardAPIView
 from .ai_agent_dashboard import (
     AIAgentDashboardAPIView,
     CustomerProfilesAPIView,
     ScheduledCallbacksAPIView
 )
 
-# Dashboard APIs for all modules
+# صرف 4 modules کے لیے required URLs
 urlpatterns = [
     # 1. USER DASHBOARD - Main user interface
     path('user/enhanced/', UserDashboardAPIView.as_view(), name='user-dashboard-enhanced'),
@@ -16,14 +15,11 @@ urlpatterns = [
     # 2. ADMIN DASHBOARD - Admin metrics & management  
     path('admin/dashboard/', AdminDashboardAPIView.as_view(), name='admin-dashboard-api'),
     
-    # 3. COMPREHENSIVE DASHBOARD - All data in one API
-    path('comprehensive/', ComprehensiveDashboardAPIView.as_view(), name='comprehensive-dashboard'),
-    
-    # 4. AI AGENT DASHBOARD - Agent management & monitoring
+    # 3. AI AGENT DASHBOARD - Agent management & monitoring
     path('ai-agent/', AIAgentDashboardAPIView.as_view(), name='ai-agent-dashboard'),
     path('ai-agent/customers/', CustomerProfilesAPIView.as_view(), name='ai-agent-customers'),
     path('ai-agent/callbacks/', ScheduledCallbacksAPIView.as_view(), name='ai-agent-callbacks'),
     
-    # Note: SUBSCRIPTION & BILLING handled in subscriptions/urls.py
-    # Note: USER ROLES handled in accounts/urls.py
+    # 4. SUBSCRIPTION & BILLING - User subscription management (handled in subscriptions/urls.py)
+    # 5. USER ROLES - User role management (handled in accounts/urls.py)
 ]

@@ -29,7 +29,7 @@ class AIAgentDashboardAPIView(APIView):
             404: "AI Agent not found"
         },
         operation_description="Get complete AI Agent dashboard - agent status, performance, calls, learning",
-        tags=['AI Agent Dashboard']
+        tags=['Dashboard']
     )
     def get(self, request):
         user = request.user
@@ -305,7 +305,7 @@ class CustomerProfilesAPIView(APIView):
             openapi.Parameter('converted', openapi.IN_QUERY, description="Filter by conversion status", type=openapi.TYPE_BOOLEAN),
         ],
         responses={200: "Customer profiles list"},
-        tags=['AI Agent Customers']
+        tags=['AI Agents']
     )
     def get(self, request):
         try:
@@ -372,7 +372,7 @@ class ScheduledCallbacksAPIView(APIView):
             openapi.Parameter('overdue', openapi.IN_QUERY, description="Show only overdue callbacks", type=openapi.TYPE_BOOLEAN),
         ],
         responses={200: "Scheduled callbacks list"},
-        tags=['AI Agent Callbacks']
+        tags=['AI Agents']
     )
     def get(self, request):
         try:

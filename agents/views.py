@@ -23,8 +23,8 @@ class AgentProfileAPIView(APIView):
             401: "Unauthorized",
             404: "Agent profile not found"
         },
-        operation_description="Get agent profile information",
-        tags=['Agents'],
+        operation_description="Get agent profile information", 
+        tags=['AI Agents'],
         security=[{'Bearer': []}]
     )
     def get(self, request):
@@ -117,7 +117,7 @@ class AgentProfileAPIView(APIView):
             404: "Agent profile not found"
         },
         operation_description="Update agent profile",
-        tags=['Agents'],
+        tags=['AI Agents'],
         security=[{'Bearer': []}]
     )
     def patch(self, request):
@@ -172,7 +172,7 @@ class AgentStatusAPIView(APIView):
             404: "Agent profile not found"
         },
         operation_description="Update agent status",
-        tags=['Agents'],
+        tags=['AI Agents'],
         security=[{'Bearer': []}]
     )
     def post(self, request):
@@ -214,7 +214,7 @@ class AgentPerformanceAPIView(APIView):
             404: "Agent profile not found"
         },
         operation_description="Get agent performance statistics",
-        tags=['Agents'],
+        tags=['AI Agents'],
         security=[{'Bearer': []}]
     )
     def get(self, request):
@@ -293,7 +293,7 @@ class AgentCallHistoryAPIView(APIView):
             404: "Agent profile not found"
         },
         operation_description="Get agent call history with pagination",
-        tags=['Agents'],
+        tags=['AI Agents'],
         security=[{'Bearer': []}]
     )
     def get(self, request):

@@ -40,7 +40,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     },
     operation_description="Get current authenticated user information",
     operation_summary="Get Current User",
-    tags=['Accounts']
+    tags=['User Management']
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -106,7 +106,8 @@ def change_user_role(request):
 @swagger_auto_schema(
     method='get',
     operation_description="Get all admin users",
-    responses={200: UserSerializer(many=True)}
+    responses={200: UserSerializer(many=True)},
+    tags=['User Management']
 )
 @api_view(['GET'])
 @permission_classes([IsAdmin])
@@ -120,7 +121,8 @@ def admin_users(request):
 @swagger_auto_schema(
     method='get',
     operation_description="Get all regular users",
-    responses={200: UserSerializer(many=True)}
+    responses={200: UserSerializer(many=True)},
+    tags=['User Management']
 )
 @api_view(['GET'])
 @permission_classes([IsAdmin])
@@ -134,6 +136,7 @@ def regular_users(request):
 @swagger_auto_schema(
     method='post',
     operation_description="Deactivate user account (Admin only)",
+    tags=['User Management'],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         required=['user_id'],

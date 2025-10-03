@@ -53,12 +53,13 @@ class CallSessionsAPIView(APIView):
             call_data = {
                 'id': str(call.id),
                 'call_type': call.call_type,
-                'phone_number': call.phone_number,
+                'caller_number': call.caller_number,
+                'callee_number': call.callee_number,
                 'status': call.status,
                 'started_at': call.started_at.isoformat(),
                 'ended_at': call.ended_at.isoformat() if call.ended_at else None,
                 'duration': call.call_duration_formatted,
-                'recording_url': call.recording_url,
+                'recording_url': call.twilio_recording_url,
                 'user': {
                     'id': str(call.user.id),
                     'name': call.user.get_full_name(),
@@ -69,8 +70,10 @@ class CallSessionsAPIView(APIView):
                     'name': call.agent.user.get_full_name(),
                     'employee_id': call.agent.employee_id
                 } if call.agent else None,
-                'ai_transcript': call.ai_transcript,
-                'customer_satisfaction': call.customer_satisfaction
+                'ai_summary': call.ai_summary,
+                'ai_sentiment': call.ai_sentiment,
+                'ai_keywords': call.ai_keywords,
+                'notes': call.notes
             }
             data.append(call_data)
         

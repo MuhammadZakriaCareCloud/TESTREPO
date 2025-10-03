@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from .ai_agent_views import (
     AIAgentSetupAPIView,
@@ -49,4 +49,7 @@ urlpatterns = [
     path('ai/callbacks/', ScheduledCallbackCRUDAPIView.as_view(), name='callback-list-create'),
     path('ai/callbacks/<uuid:id>/', ScheduledCallbackDetailAPIView.as_view(), name='callback-detail'),
     path('ai/callbacks/bulk-actions/', CallbackBulkActionsAPIView.as_view(), name='callback-bulk-actions'),
+    
+    # Agent Management & Configuration System (16 hours of features)
+    path('', include('agents.agent_management_urls')),
 ]

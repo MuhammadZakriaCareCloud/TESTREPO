@@ -634,7 +634,7 @@ class UserDashboardOverviewAPIView(APIView):
             401: "Unauthorized"
         },
         operation_description="Get complete user dashboard overview with all management options",
-        tags=['User Dashboard'],
+        tags=['Dashboard'],
         security=[{'Bearer': []}]
     )
     def get(self, request):
@@ -812,7 +812,7 @@ class UserSubscriptionManagementAPIView(APIView):
             401: "Unauthorized"
         },
         operation_description="Get user subscription management options",
-        tags=['User Dashboard'],
+        tags=['Dashboard'],
         security=[{'Bearer': []}]
     )
     def get(self, request):
@@ -902,7 +902,7 @@ class UserSubscriptionManagementAPIView(APIView):
             400: "Bad request"
         },
         operation_description="Perform subscription actions",
-        tags=['User Dashboard'],
+        tags=['Dashboard'],
         security=[{'Bearer': []}]
     )
     def post(self, request):
@@ -967,7 +967,7 @@ class UserCallHistoryAPIView(APIView):
             401: "Unauthorized"
         },
         operation_description="Get user call history with filtering",
-        tags=['User Dashboard'],
+        tags=['Dashboard'],
         security=[{'Bearer': []}]
     )
     def get(self, request):
