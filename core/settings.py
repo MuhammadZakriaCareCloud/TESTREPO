@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'drf_yasg',
+    'django_celery_beat',
     
     # Local apps
     'accounts',
@@ -198,69 +199,61 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8000",  # For Swagger UI
 ]
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # Set to True only in development
 
-# CSRF Settings for API
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-]
+# Celery Configuration
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
-# For JWT API endpoints, disable CSRF
-CSRF_USE_SESSIONS = False
-CSRF_COOKIE_HTTPONLY = False
+# Celery Beat Schedule for Automatic Tasks
+from celery.schedules import crontab
 
-# Exempt specific API endpoints from CSRF
-CSRF_EXEMPT_URLS = [
-    r'^/api/auth/',
-]
+CELERY_BEAT_SCHEDULE = {
+    # Process auto calls every 5 minutes during business hours
+    'process-auto-calls': {
+        'task': 'agents.tasks.process_scheduled_auto_calls',
+        'schedule': crontab(minute='*/5', hour='9-17'),  # Every 5 minutes, 9 AM - 5 PM
+    },
+    
+    # Process callback reminders every 10 minutes
+    'process-callback-reminders': {
+        'task': 'agents.tasks.process_callback_reminders',
+        'schedule': crontab(minute='*/10'),  # Every 10 minutes
+    },
+    
+    # Cleanup old campaigns daily at 2 AM
+    'cleanup-old-campaigns': {
+        'task': 'agents.tasks.cleanup_old_campaigns',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+    },
+    
+    # Update customer priorities daily at 1 AM
+    'update-customer-priorities': {
+        'task': 'agents.tasks.update_customer_priorities',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
+    },
+}
 
-# Frontend URL for password reset
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
-
-# Stripe Configuration
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_...')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_...')
-STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_...')
-STRIPE_LIVE_MODE = config('STRIPE_LIVE_MODE', default=False, cast=bool)
+# HumeAI Configuration
+HUME_AI_API_KEY = config('HUME_AI_API_KEY', default='')
+HUME_AI_BASE_URL = config('HUME_AI_BASE_URL', default='https://api.hume.ai/v0')
+HUME_AI_MODEL = config('HUME_AI_MODEL', default='evi-2')
 
 # Twilio Configuration
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
 TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
 
-# HomeAI Configuration
-HOMEAI_API_KEY = config('HOMEAI_API_KEY', default='')
-HOMEAI_API_URL = config('HOMEAI_API_URL', default='https://api.homeai.com/v1')
+# Webhook Security
+WEBHOOK_SECRET_KEY = config('WEBHOOK_SECRET_KEY', default='your-webhook-secret-key')
 
-# Swagger/OpenAPI Configuration
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header',
-            'description': 'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"'
-        }
-    },
-    'USE_SESSION_AUTH': False,
-    'JSON_EDITOR': True,
-    'SUPPORTED_SUBMIT_METHODS': [
-        'get',
-        'post',
-        'put',
-        'delete',
-        'patch'
-    ],
-    'OPERATIONS_SORTER': 'alpha',
-    'TAGS_SORTER': 'alpha',
-    'DOC_EXPANSION': 'none',
-    'DEEP_LINKING': True,
-    'SHOW_EXTENSIONS': True,
-    'DEFAULT_MODEL_RENDERING': 'model',
-}
+# Stripe Configuration
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_placeholder')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_placeholder')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_placeholder')
 
 # Development Settings
 if DEBUG:

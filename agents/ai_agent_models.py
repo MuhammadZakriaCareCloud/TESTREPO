@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 import json
 import uuid
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -94,6 +95,251 @@ class AIAgent(models.Model):
         self.conversion_rate = (self.successful_conversions / self.calls_handled) * 100
         self.save()
 
+    def update_learning_data(self, learning_data):
+        """
+        Automatic learning from call data
+        Har call ke baad agent khud ko update karta hai
+        """
+        current_memory = self.conversation_memory or {}
+        
+        # Initialize learning structure if not exists
+        if 'automatic_learning' not in current_memory:
+            current_memory['automatic_learning'] = {
+                'total_calls_learned_from': 0,
+                'successful_patterns': [],
+                'failed_patterns': [],
+                'objection_database': {},
+                'customer_behavior_insights': {},
+                'performance_metrics': {
+                    'avg_call_duration': 0,
+                    'conversion_trends': [],
+                    'best_performing_scripts': [],
+                    'sentiment_analysis_history': []
+                }
+            }
+        
+        learning = current_memory['automatic_learning']
+        
+        # Update call count
+        learning['total_calls_learned_from'] += 1
+        
+        # Process successful patterns
+        if learning_data.get('successful'):
+            pattern = {
+                'approach_used': learning_data.get('notes', '')[:200],
+                'customer_response': learning_data.get('customer_response', ''),
+                'outcome': learning_data.get('outcome'),
+                'duration': learning_data.get('call_duration', 0),
+                'customer_interest': learning_data.get('customer_interest_level'),
+                'timestamp': timezone.now().isoformat(),
+                'effectiveness_score': 8 if learning_data.get('outcome') == 'converted' else 6
+            }
+            learning['successful_patterns'].append(pattern)
+            
+            # Keep only top 20 successful patterns
+            learning['successful_patterns'] = sorted(
+                learning['successful_patterns'], 
+                key=lambda x: x['effectiveness_score'], 
+                reverse=True
+            )[:20]
+        
+        else:
+            # Learn from failures too
+            failed_pattern = {
+                'approach_tried': learning_data.get('notes', '')[:200],
+                'customer_response': learning_data.get('customer_response', ''),
+                'outcome': learning_data.get('outcome'),
+                'what_went_wrong': 'Low customer satisfaction' if learning_data.get('satisfaction', 5) < 4 else 'No interest generated',
+                'timestamp': timezone.now().isoformat()
+            }
+            learning['failed_patterns'].append(failed_pattern)
+            
+            # Keep only recent 15 failed patterns
+            if len(learning['failed_patterns']) > 15:
+                learning['failed_patterns'] = learning['failed_patterns'][-15:]
+        
+        # Update performance metrics
+        metrics = learning['performance_metrics']
+        
+        # Update average call duration
+        current_avg = metrics['avg_call_duration']
+        new_duration = learning_data.get('call_duration', 0)
+        total_calls = learning['total_calls_learned_from']
+        
+        metrics['avg_call_duration'] = ((current_avg * (total_calls - 1)) + new_duration) / total_calls
+        
+        # Track conversion trends (last 10 calls)
+        conversion_trends = metrics['conversion_trends']
+        conversion_trends.append({
+            'call_number': total_calls,
+            'converted': learning_data.get('successful', False),
+            'satisfaction': learning_data.get('satisfaction', 5),
+            'date': timezone.now().isoformat()
+        })
+        
+        # Keep only last 10 trends
+        if len(conversion_trends) > 10:
+            metrics['conversion_trends'] = conversion_trends[-10:]
+        
+        # Update sentiment analysis history
+        if learning_data.get('satisfaction'):
+            metrics['sentiment_analysis_history'].append({
+                'satisfaction_score': learning_data.get('satisfaction'),
+                'customer_interest': learning_data.get('customer_interest_level'),
+                'call_outcome': learning_data.get('outcome'),
+                'timestamp': timezone.now().isoformat()
+            })
+            
+            # Keep only last 20 sentiment records
+            if len(metrics['sentiment_analysis_history']) > 20:
+                metrics['sentiment_analysis_history'] = metrics['sentiment_analysis_history'][-20:]
+        
+        # Save updated memory
+        self.conversation_memory = current_memory
+        
+        # Update agent performance stats
+        self.calls_handled += 1
+        if learning_data.get('successful'):
+            self.successful_calls += 1
+        
+        self.save()
+        
+        return learning
+    
+    def get_learning_recommendations(self):
+        """
+        Agent ke learning data se recommendations generate karna
+        """
+        if not self.conversation_memory or 'automatic_learning' not in self.conversation_memory:
+            return []
+        
+        learning = self.conversation_memory['automatic_learning']
+        recommendations = []
+        
+        # Analyze success patterns
+        successful_patterns = learning.get('successful_patterns', [])
+        if len(successful_patterns) >= 3:
+            best_pattern = max(successful_patterns, key=lambda x: x['effectiveness_score'])
+            recommendations.append({
+                'type': 'success_replication',
+                'message': f"Your most effective approach: '{best_pattern['approach_used'][:50]}...' - Use this pattern more often",
+                'priority': 'high'
+            })
+        
+        # Analyze failed patterns
+        failed_patterns = learning.get('failed_patterns', [])
+        if len(failed_patterns) >= 2:
+            common_failure = failed_patterns[-1]  # Most recent failure
+            recommendations.append({
+                'type': 'failure_avoidance',
+                'message': f"Avoid approach that led to: '{common_failure['what_went_wrong']}' - Try alternative strategies",
+                'priority': 'medium'
+            })
+        
+        # Analyze conversion trends
+        trends = learning.get('performance_metrics', {}).get('conversion_trends', [])
+        if len(trends) >= 5:
+            recent_success_rate = sum(1 for t in trends[-5:] if t['converted']) / 5
+            if recent_success_rate < 0.2:  # Less than 20% success in last 5 calls
+                recommendations.append({
+                    'type': 'performance_improvement',
+                    'message': 'Your recent conversion rate is low. Consider adjusting your approach or script',
+                    'priority': 'high'
+                })
+            elif recent_success_rate > 0.6:  # More than 60% success
+                recommendations.append({
+                    'type': 'performance_excellence',
+                    'message': 'Excellent performance! Your current approach is working very well',
+                    'priority': 'low'
+                })
+        
+        # Analyze customer satisfaction
+        sentiment_history = learning.get('performance_metrics', {}).get('sentiment_analysis_history', [])
+        if len(sentiment_history) >= 3:
+            avg_satisfaction = sum(s['satisfaction_score'] for s in sentiment_history[-3:]) / 3
+            if avg_satisfaction < 3:
+                recommendations.append({
+                    'type': 'customer_satisfaction',
+                    'message': 'Customer satisfaction is low. Focus on being more empathetic and less pushy',
+                    'priority': 'high'
+                })
+        
+        return recommendations
+    
+    def auto_adjust_strategy(self):
+        """
+        Agent apni strategy automatically adjust karta hai
+        Learning data ke base par
+        """
+        if not self.conversation_memory or 'automatic_learning' not in self.conversation_memory:
+            return False
+        
+        learning = self.conversation_memory['automatic_learning']
+        
+        # Get successful patterns
+        successful_patterns = learning.get('successful_patterns', [])
+        
+        if len(successful_patterns) >= 3:
+            # Find most effective pattern
+            best_pattern = max(successful_patterns, key=lambda x: x['effectiveness_score'])
+            
+            # Update agent's default approach based on successful pattern
+            memory = self.conversation_memory
+            
+            if 'adaptive_strategy' not in memory:
+                memory['adaptive_strategy'] = {}
+            
+            memory['adaptive_strategy'].update({
+                'primary_approach': best_pattern['approach_used'],
+                'target_call_duration': best_pattern['duration'],
+                'effective_with_interest_level': best_pattern['customer_interest'],
+                'last_strategy_update': timezone.now().isoformat(),
+                'confidence_level': min(len(successful_patterns) * 10, 100)  # Max 100%
+            })
+            
+            self.conversation_memory = memory
+            self.save()
+            
+            return True
+        
+        return False
+    
+    def get_personalized_script_for_customer(self, customer_profile):
+        """
+        Customer ke profile ke according personalized script generate karna
+        """
+        if not self.conversation_memory:
+            return self.sales_script or "Hello, this is a sales call."
+        
+        learning = self.conversation_memory.get('automatic_learning', {})
+        successful_patterns = learning.get('successful_patterns', [])
+        
+        # Find patterns that worked for similar customers
+        matching_patterns = [
+            pattern for pattern in successful_patterns
+            if pattern['customer_interest'] == customer_profile.interest_level
+        ]
+        
+        if matching_patterns:
+            # Use the most effective pattern for similar customers
+            best_match = max(matching_patterns, key=lambda x: x['effectiveness_score'])
+            personalized_script = f"""
+            Hello {customer_profile.name or 'there'}, 
+            
+            {best_match['approach_used']}
+            
+            Based on our previous successful conversations with customers like you, 
+            I believe this could be exactly what you're looking for.
+            """
+            return personalized_script.strip()
+        
+        # Fallback to general successful pattern
+        elif successful_patterns:
+            general_best = max(successful_patterns, key=lambda x: x['effectiveness_score'])
+            return f"Hello {customer_profile.name or 'there'}, {general_best['approach_used']}"
+        
+        # Final fallback
+        return f"Hello {customer_profile.name or 'there'}, " + (self.sales_script or "I'm calling about an opportunity that might interest you.")
 
 class CustomerProfile(models.Model):
     """

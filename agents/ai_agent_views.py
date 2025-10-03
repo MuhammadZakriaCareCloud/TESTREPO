@@ -587,3 +587,310 @@ class CallOutcomeAPIView(APIView):
             return Response({
                 'error': 'No AI Agent found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class DynamicAgentLearningAPIView(APIView):
+    """
+    Advanced Dynamic AI Agent Learning System
+    Agent automatically learns from every customer interaction
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'call_id': openapi.Schema(type=openapi.TYPE_STRING, description='Call session ID'),
+                'learning_data': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'customer_objections': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_STRING),
+                            description='Customer objections during call'
+                        ),
+                        'successful_responses': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_STRING),
+                            description='Responses that worked well'
+                        ),
+                        'failed_approaches': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_STRING),
+                            description='Approaches that didn\'t work'
+                        ),
+                        'customer_behavior_pattern': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Customer behavior pattern observed'
+                        ),
+                        'emotional_state': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            enum=['interested', 'skeptical', 'angry', 'neutral', 'excited'],
+                            description='Customer emotional state'
+                        ),
+                        'conversion_factors': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_STRING),
+                            description='Factors that led to conversion'
+                        )
+                    }
+                ),
+                'agent_performance_metrics': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'talk_time_ratio': openapi.Schema(type=openapi.TYPE_NUMBER, description='Agent vs customer talk time'),
+                        'question_effectiveness': openapi.Schema(type=openapi.TYPE_NUMBER, description='1-10 rating'),
+                        'objection_handling_score': openapi.Schema(type=openapi.TYPE_NUMBER, description='1-10 rating'),
+                        'closing_technique_used': openapi.Schema(type=openapi.TYPE_STRING, description='Which closing technique was used')
+                    }
+                )
+            },
+            required=['call_id', 'learning_data']
+        ),
+        responses={200: "Agent learning completed successfully"},
+        operation_description="Advanced dynamic learning from customer interactions",
+        tags=['AI Agents']
+    )
+    def post(self, request):
+        try:
+            agent = request.user.ai_agent
+            data = request.data
+            
+            # Get call session
+            call_session = CallSession.objects.get(
+                id=data.get('call_id'),
+                ai_agent=agent
+            )
+            
+            learning_data = data.get('learning_data', {})
+            performance_metrics = data.get('agent_performance_metrics', {})
+            
+            # Create advanced training session
+            training = AIAgentTraining.objects.create(
+                ai_agent=agent,
+                training_type='dynamic_learning',
+                training_data={
+                    'call_context': {
+                        'call_id': str(call_session.id),
+                        'customer_profile': call_session.customer_profile.phone_number,
+                        'call_outcome': call_session.outcome,
+                        'call_duration': call_session.duration_seconds,
+                        'timestamp': datetime.now().isoformat()
+                    },
+                    'learning_insights': learning_data,
+                    'performance_analysis': performance_metrics,
+                    'improvement_areas': self._analyze_improvement_areas(learning_data, performance_metrics)
+                },
+                completion_percentage=100,
+                is_completed=True
+            )
+            
+            # Update agent's conversation memory with new learnings
+            current_memory = agent.conversation_memory or {}
+            
+            # Store objection handling patterns
+            if 'objection_patterns' not in current_memory:
+                current_memory['objection_patterns'] = {}
+            
+            for objection in learning_data.get('customer_objections', []):
+                objection_key = objection.lower().replace(' ', '_')[:50]
+                if objection_key not in current_memory['objection_patterns']:
+                    current_memory['objection_patterns'][objection_key] = {
+                        'count': 0,
+                        'successful_responses': [],
+                        'failed_responses': []
+                    }
+                current_memory['objection_patterns'][objection_key]['count'] += 1
+            
+            # Store successful techniques
+            if 'successful_techniques' not in current_memory:
+                current_memory['successful_techniques'] = []
+            
+            for response in learning_data.get('successful_responses', []):
+                technique = {
+                    'response': response,
+                    'context': learning_data.get('customer_behavior_pattern', ''),
+                    'effectiveness_score': performance_metrics.get('question_effectiveness', 5),
+                    'learned_from_call': str(call_session.id),
+                    'timestamp': datetime.now().isoformat()
+                }
+                
+                # Avoid duplicates
+                if not any(t['response'] == response for t in current_memory['successful_techniques']):
+                    current_memory['successful_techniques'].append(technique)
+            
+            # Store emotional response patterns
+            if 'emotional_patterns' not in current_memory:
+                current_memory['emotional_patterns'] = {}
+            
+            emotional_state = learning_data.get('emotional_state')
+            if emotional_state:
+                if emotional_state not in current_memory['emotional_patterns']:
+                    current_memory['emotional_patterns'][emotional_state] = {
+                        'count': 0,
+                        'successful_approaches': [],
+                        'conversion_rate': 0
+                    }
+                current_memory['emotional_patterns'][emotional_state]['count'] += 1
+                
+                # Update conversion rate
+                if call_session.outcome in ['interested', 'converted']:
+                    current_rate = current_memory['emotional_patterns'][emotional_state]['conversion_rate']
+                    current_count = current_memory['emotional_patterns'][emotional_state]['count']
+                    new_rate = ((current_rate * (current_count - 1)) + 1) / current_count
+                    current_memory['emotional_patterns'][emotional_state]['conversion_rate'] = new_rate
+            
+            # Update learning metrics
+            if 'learning_metrics' not in current_memory:
+                current_memory['learning_metrics'] = {
+                    'total_learning_sessions': 0,
+                    'improvement_score': 0,
+                    'adaptive_responses_learned': 0,
+                    'last_learning_date': None
+                }
+            
+            current_memory['learning_metrics']['total_learning_sessions'] += 1
+            current_memory['learning_metrics']['adaptive_responses_learned'] += len(learning_data.get('successful_responses', []))
+            current_memory['learning_metrics']['last_learning_date'] = datetime.now().isoformat()
+            
+            # Calculate improvement score based on performance
+            avg_performance = (
+                performance_metrics.get('question_effectiveness', 5) +
+                performance_metrics.get('objection_handling_score', 5)
+            ) / 2
+            
+            current_memory['learning_metrics']['improvement_score'] = (
+                (current_memory['learning_metrics']['improvement_score'] + avg_performance) / 2
+            )
+            
+            agent.conversation_memory = current_memory
+            
+            # Update agent training level based on dynamic learning
+            agent.training_level = min(agent.training_level + 2, 100)  # Incremental improvement
+            
+            # Update agent status based on learning progress
+            if agent.training_level >= 80 and agent.status != 'active':
+                agent.status = 'active'
+            
+            agent.save()
+            
+            return Response({
+                'message': 'Dynamic learning completed successfully',
+                'learning_session_id': str(training.id),
+                'agent_improvements': {
+                    'new_training_level': agent.training_level,
+                    'total_learning_sessions': current_memory['learning_metrics']['total_learning_sessions'],
+                    'improvement_score': round(current_memory['learning_metrics']['improvement_score'], 2),
+                    'new_techniques_learned': len(learning_data.get('successful_responses', [])),
+                    'objection_patterns_updated': len(learning_data.get('customer_objections', []))
+                },
+                'agent_status': agent.status,
+                'learning_insights': self._generate_learning_insights(current_memory),
+                'next_optimization_suggestions': self._generate_optimization_suggestions(current_memory, performance_metrics)
+            }, status=status.HTTP_200_OK)
+            
+        except CallSession.DoesNotExist:
+            return Response({
+                'error': 'Call session not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except AIAgent.DoesNotExist:
+            return Response({
+                'error': 'No AI Agent found'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    def _analyze_improvement_areas(self, learning_data, performance_metrics):
+        """Analyze areas where agent needs improvement"""
+        improvement_areas = []
+        
+        # Check objection handling
+        if performance_metrics.get('objection_handling_score', 5) < 7:
+            improvement_areas.append({
+                'area': 'objection_handling',
+                'priority': 'high',
+                'suggestion': 'Focus on better objection handling techniques',
+                'failed_objections': learning_data.get('failed_approaches', [])
+            })
+        
+        # Check talk time ratio
+        talk_time_ratio = performance_metrics.get('talk_time_ratio', 0.5)
+        if talk_time_ratio > 0.7:  # Agent talking too much
+            improvement_areas.append({
+                'area': 'listening_skills',
+                'priority': 'medium',
+                'suggestion': 'Let customer talk more, ask better questions'
+            })
+        elif talk_time_ratio < 0.3:  # Agent not engaging enough
+            improvement_areas.append({
+                'area': 'engagement',
+                'priority': 'medium',
+                'suggestion': 'Be more engaging and take control of conversation'
+            })
+        
+        # Check question effectiveness
+        if performance_metrics.get('question_effectiveness', 5) < 6:
+            improvement_areas.append({
+                'area': 'questioning_technique',
+                'priority': 'high',
+                'suggestion': 'Improve question quality and timing'
+            })
+        
+        return improvement_areas
+    
+    def _generate_learning_insights(self, memory):
+        """Generate insights from accumulated learning"""
+        insights = []
+        
+        # Objection patterns insight
+        if 'objection_patterns' in memory:
+            most_common_objection = max(
+                memory['objection_patterns'].items(),
+                key=lambda x: x[1]['count'],
+                default=(None, None)
+            )
+            if most_common_objection[0]:
+                insights.append(f"Most common objection: {most_common_objection[0]} (appeared {most_common_objection[1]['count']} times)")
+        
+        # Emotional patterns insight
+        if 'emotional_patterns' in memory:
+            best_emotional_approach = max(
+                memory['emotional_patterns'].items(),
+                key=lambda x: x[1]['conversion_rate'],
+                default=(None, None)
+            )
+            if best_emotional_approach[0]:
+                insights.append(f"Best conversion rate with {best_emotional_approach[0]} customers: {best_emotional_approach[1]['conversion_rate']:.2%}")
+        
+        # Learning progress insight
+        if 'learning_metrics' in memory:
+            metrics = memory['learning_metrics']
+            insights.append(f"Total learning sessions: {metrics['total_learning_sessions']}")
+            insights.append(f"Current improvement score: {metrics['improvement_score']:.2f}/10")
+        
+        return insights
+    
+    def _generate_optimization_suggestions(self, memory, performance_metrics):
+        """Generate suggestions for agent optimization"""
+        suggestions = []
+        
+        # Based on successful techniques
+        if 'successful_techniques' in memory and len(memory['successful_techniques']) > 0:
+            suggestions.append("Continue using recently learned successful responses")
+        
+        # Based on emotional patterns
+        if 'emotional_patterns' in memory:
+            best_approach = max(
+                memory['emotional_patterns'].items(),
+                key=lambda x: x[1]['conversion_rate'],
+                default=(None, None)
+            )
+            if best_approach[0]:
+                suggestions.append(f"Focus more on {best_approach[0]} customer approach - highest conversion rate")
+        
+        # Based on performance metrics
+        if performance_metrics.get('objection_handling_score', 5) < 7:
+            suggestions.append("Practice more objection handling scenarios")
+        
+        if performance_metrics.get('question_effectiveness', 5) < 6:
+            suggestions.append("Improve questioning techniques and timing")
+        
+        return suggestions
