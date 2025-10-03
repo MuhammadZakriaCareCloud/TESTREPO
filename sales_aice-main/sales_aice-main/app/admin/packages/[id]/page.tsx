@@ -39,7 +39,7 @@ function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 const yesNo = (b: boolean) => (b ? 'Yes' : 'No');
 
-export default function PackageDetailPage() {
+export default function PackageDetailPage() {debugger
   const params = useParams<{ id: string }>();
   const pkgId = useMemo(() => params?.id, [params?.id]);
 
@@ -47,10 +47,10 @@ export default function PackageDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect(() => {debugger
     if (!pkgId) return;
     (async () => {
-      try {
+      try {debugger
         setLoading(true);
         setError(null);
         const { data } = await axiosInstance.get<AdminPackage>(`/api/accounts/admin/packages/${pkgId}/`);

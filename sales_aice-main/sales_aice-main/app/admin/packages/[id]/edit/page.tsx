@@ -54,7 +54,7 @@ export default function EditPackagePage() {
   useEffect(() => {
     if (!pkgId) return;
     (async () => {
-      try {
+      try {debugger
         setLoading(true);
         setError(null);
         const { data } = await axiosInstance.get<AdminPackage>(`/api/accounts/admin/packages/${pkgId}/`);
@@ -105,7 +105,7 @@ export default function EditPackagePage() {
       },
     };
 
-    try {
+    try {debugger
       setSaving(true);
       await axiosInstance.patch(`/api/accounts/admin/packages/${pkgId}/`, payload);
       toast.success('Package saved');
@@ -121,7 +121,7 @@ export default function EditPackagePage() {
   const onDelete = async () => {
     const ok = confirm('Delete this package? This cannot be undone.');
     if (!ok) return;
-    try {
+    try {debugger
       setDeleting(true);
       await axiosInstance.delete(`/api/accounts/admin/packages/${pkgId}/`);
       toast.success('Package deleted');

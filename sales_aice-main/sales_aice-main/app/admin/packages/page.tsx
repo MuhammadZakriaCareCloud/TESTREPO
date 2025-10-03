@@ -36,10 +36,10 @@ export default function PackagesListPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    try {
+    try {debugger
       setLoading(true);
       setError(null);
-      const { data } = await axiosInstance.get<AdminPackage[]>('/api/accounts/admin/packages/');
+      const { data } = await axiosInstance.get<AdminPackage[]>('/api/subscriptions/packages/');
       setRows(data.map(normalize));
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load packages');
@@ -55,7 +55,7 @@ export default function PackagesListPage() {
   const handleDelete = async (id: string | number, name: string) => {
     const ok = confirm(`Delete package "${name}"? This cannot be undone.`);
     if (!ok) return;
-    try {
+    try {debugger
       setDeletingId(id);
       await axiosInstance.delete(`/api/accounts/admin/packages/${id}/`);
       toast.success('Package deleted');

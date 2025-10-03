@@ -90,7 +90,7 @@ export default function NewPackagePage() {
       },
     };
 
-    try {
+    try {debugger
       setSaving(true);
       await axiosInstance.post('/api/accounts/admin/packages/', payload);
       toast.success('Package created');
