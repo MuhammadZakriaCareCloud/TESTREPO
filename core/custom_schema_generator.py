@@ -1,5 +1,5 @@
 """
-Custom schema generator to control Swagger tags
+Custom schema generator to control Swagger tags and JWT authentication
 """
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg import openapi
@@ -51,6 +51,21 @@ class CustomSchemaGenerator(OpenAPISchemaGenerator):
         # Always set official tags, regardless of what was auto-generated
         schema.tags = official_tags
         
+        # Configure JWT Bearer token authentication for Swagger UI
+        if not hasattr(schema, 'security_definitions'):
+            schema.security_definitions = {}
+        
+        # Use the correct drf_yasg API for security definitions
+        schema.security_definitions['Bearer'] = {
+            'type': 'apiKey',
+            'name': 'Authorization', 
+            'in': 'header',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer {token}"'
+        }
+        
+        # Apply Bearer authentication to all operations that require authentication
+        self._apply_security_to_operations(schema)
+        
         return schema
     
     def _clean_path_tags(self, schema):
@@ -74,6 +89,29 @@ class CustomSchemaGenerator(OpenAPISchemaGenerator):
                     
                     operation.tags = cleaned_tags
     
+    def _apply_security_to_operations(self, schema):
+        """Apply Bearer token security to operations that require authentication"""
+        if not hasattr(schema, 'paths') or not schema.paths:
+            return
+            
+        for path, path_item in schema.paths.items():
+            for method, operation in path_item.items():
+                # Skip auth endpoints that don't need authentication
+                if hasattr(operation, 'tags') and operation.tags:
+                    # Check if this is an authentication endpoint
+                    is_auth_endpoint = any('auth' in tag.lower() for tag in operation.tags)
+                    # Check if this is a token generation endpoint
+                    is_token_endpoint = 'token' in path.lower() or 'login' in path.lower()
+                    
+                    # Apply security to all operations except auth/token endpoints
+                    if not (is_auth_endpoint and is_token_endpoint):
+                        if not hasattr(operation, 'security'):
+                            operation.security = []
+                        # Add Bearer token requirement
+                        bearer_security = {'Bearer': []}
+                        if bearer_security not in operation.security:
+                            operation.security.append(bearer_security)
+
     def _get_tag_description(self, tag_name):
         """Get description for official tags"""
         descriptions = {

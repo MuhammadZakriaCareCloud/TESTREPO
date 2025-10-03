@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='wwvnx-f+3g$-)c0kjdpg+ib2^ipojc3%@6k-0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -157,6 +157,33 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+# Swagger/OpenAPI Configuration for JWT Authentication
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer {token}"'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+        'delete',
+        'patch'
+    ],
+    'OPERATIONS_SORTER': 'alpha',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'none',
+    'DEEP_LINKING': True,
+    'SHOW_EXTENSIONS': True,
+    'DEFAULT_MODEL_RENDERING': 'model',
+}
+
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
@@ -254,6 +281,16 @@ WEBHOOK_SECRET_KEY = config('WEBHOOK_SECRET_KEY', default='your-webhook-secret-k
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_placeholder')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_placeholder')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_placeholder')
+
+# Stripe Settings
+STRIPE_LIVE_MODE = config('STRIPE_LIVE_MODE', default=False, cast=bool)
+STRIPE_SUCCESS_URL = config('STRIPE_SUCCESS_URL', default='http://localhost:3000/billing/success')
+STRIPE_CANCEL_URL = config('STRIPE_CANCEL_URL', default='http://localhost:3000/billing/cancel')
+
+# Payment and Subscription Settings
+TRIAL_PERIOD_DAYS = config('TRIAL_PERIOD_DAYS', default=14, cast=int)
+GRACE_PERIOD_DAYS = config('GRACE_PERIOD_DAYS', default=3, cast=int)
+MAX_PAYMENT_RETRIES = config('MAX_PAYMENT_RETRIES', default=3, cast=int)
 
 # Development Settings
 if DEBUG:

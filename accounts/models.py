@@ -19,6 +19,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.USER)
     user_name = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    
+    # Stripe integration
+    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
+    
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=False)
