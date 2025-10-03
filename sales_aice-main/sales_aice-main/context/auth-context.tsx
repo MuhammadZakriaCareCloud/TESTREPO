@@ -121,9 +121,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Real login function (commented out until API is ready)
   const login = async (email: string, password: string) => {
     // Use mock for now
-    return await loginMock(email, password);
+    //return await loginMock(email, password);
     
-    /* Uncomment when API is ready:
+    /* Uncomment when API is ready :*/
     try {
       const { data } = await axiosInstance.post<{ tokens?: any; user?: UserType; status?: string }>(
         '/api/auth/login/',
@@ -152,7 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       toast.error('Login failed. Please try again.', { position: 'bottom-right' });
     }
-    */
+    
   };
 
   const logout = async () => {
