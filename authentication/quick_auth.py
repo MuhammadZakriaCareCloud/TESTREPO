@@ -106,13 +106,13 @@ class AdminTokenAPIView(APIView):
             200: "Admin token generated",
             404: "Admin user not found"
         },
-        operation_description="Generate admin token for testing (admin@testcenter.com)",
+        operation_description="Generate admin token for testing (admin@gmail.com)",
         tags=['Authentication']
     )
     def get(self, request):
         try:
             # Get admin user
-            admin_user = User.objects.get(email='admin@testcenter.com')
+            admin_user = User.objects.get(email='admin@gmail.com')
             
             # Generate tokens
             refresh = RefreshToken.for_user(admin_user)

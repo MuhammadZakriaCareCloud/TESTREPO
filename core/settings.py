@@ -13,6 +13,7 @@ SECRET_KEY = config('SECRET_KEY', default='wwvnx-f+3g$-)c0kjdpg+ib2^ipojc3%@6k-0
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -79,18 +80,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    #  'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'SalesAiceDB',
-    #     'USER': 'postgres',  # or 'postgres' if that was a typo
-    #     'PASSWORD': 'Trivision8990',
-    #     'HOST': 'localhost',
-    #     'PORT': '5433',
-    # }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
+     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'SalesAiceDB',
+        'USER': 'postgres',  # or 'postgres' if that was a typo
+        'PASSWORD': 'Trivision8990',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 # Custom User Model
@@ -265,7 +266,7 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # HumeAI Configuration
-HUME_AI_API_KEY = config('HUME_AI_API_KEY', default='')
+HUME_AI_API_KEY = config('HUME_AI_API_KEY', default='mb5K22hbrOAvddJfkP4ZlScpMVHItgw0jfyxj0F1byGJ7j1w')
 HUME_AI_BASE_URL = config('HUME_AI_BASE_URL', default='https://api.hume.ai/v0')
 HUME_AI_MODEL = config('HUME_AI_MODEL', default='evi-2')
 
