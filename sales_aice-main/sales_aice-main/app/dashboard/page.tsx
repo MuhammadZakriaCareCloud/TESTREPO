@@ -8,12 +8,21 @@ import { PhoneIncoming, PhoneOutgoing, Users, History, CreditCard, Gauge } from 
 // Types
 // -----------------------------
 interface DashboardData {
-  inboundCalls: number;
-  outboundCalls: number;
-  planName: string;
-  planMinutesLimit: number; // total minutes in current billing cycle
-  planMinutesUsed: number;  // minutes used in current billing cycle
-  renewalDateISO: string;   // ISO date string for plan renewal (end of cycle)
+  // Summary Stats
+  inboundCalls: number;      // Total inbound calls this billing cycle
+  outboundCalls: number;     // Total outbound calls this billing cycle
+  
+  // Subscription Info
+  planName: string;          // Current subscription plan/package
+  planMinutesLimit: number;  // Total minutes in current billing cycle
+  planMinutesUsed: number;   // Minutes used in current billing cycle
+  renewalDateISO: string;    // Plan renewal/expiry date
+  billingCycleStart: string; // Start of current billing cycle
+  
+  // Additional metrics
+  totalCallsThisCycle: number;
+  averageCallDuration: number; // in minutes
+  callSuccessRate: number;     // percentage
 }
 
 // -----------------------------
@@ -128,12 +137,23 @@ export default function DashboardPage() {
 
         // --- MOCK DATA for now (remove when wiring backend) ---
         const mock: DashboardData = {
+          // Summary Stats - Total calls this billing cycle
           inboundCalls: 128,
           outboundCalls: 96,
+          totalCallsThisCycle: 224,
+          
+          // Current subscription plan/package
           planName: "Pro – 2,000 min",
           planMinutesLimit: 2000,
           planMinutesUsed: 742,
+          
+          // Plan renewal/expiry date and billing cycle
           renewalDateISO: new Date(Date.now() + 1000 * 60 * 60 * 24 * 12).toISOString(),
+          billingCycleStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
+          
+          // Additional metrics
+          averageCallDuration: 3.2, // minutes
+          callSuccessRate: 94.5, // percentage
         };
         await new Promise((r) => setTimeout(r, 400));
         // -----------------------------------------------
@@ -162,40 +182,76 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Dashboard</h1>
             <p className="mt-1 text-white/70">Overview of your calling activity and subscription.</p>
+            {data && (
+              <p className="mt-1 text-sm text-white/50">
+                Billing cycle: {formatDate(data.billingCycleStart)} - {formatDate(data.renewalDateISO)}
+              </p>
+            )}
           </div>
           {data && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/90">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-              Current plan: <span className="font-medium">{data.planName}</span>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/90">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                Current plan: <span className="font-medium">{data.planName}</span>
+              </div>
+              <div className="text-sm text-white/70">
+                Success rate: <span className="font-medium text-emerald-400">{data.callSuccessRate}%</span>
+              </div>
             </div>
           )}
         </div>
 
         {/* Summary & usage */}
         <section className="grid gap-4 md:grid-cols-3">
-          {/* Stat cards */}
+          {/* Stat cards - 2x2 grid on larger screens */}
           <div className="md:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {loading ? (
-              <Skeleton className="h-24" />
+              <>
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+              </>
             ) : (
-              <StatCard label="Inbound calls (this cycle)" value={data?.inboundCalls ?? 0} icon={<PhoneIncoming className="h-5 w-5" />} />
-            )}
-            {loading ? (
-              <Skeleton className="h-24" />
-            ) : (
-              <StatCard label="Outbound calls (this cycle)" value={data?.outboundCalls ?? 0} icon={<PhoneOutgoing className="h-5 w-5" />} />
+              <>
+                <StatCard 
+                  label="Inbound calls (this cycle)" 
+                  value={data?.inboundCalls ?? 0} 
+                  icon={<PhoneIncoming className="h-5 w-5" />} 
+                />
+                <StatCard 
+                  label="Outbound calls (this cycle)" 
+                  value={data?.outboundCalls ?? 0} 
+                  icon={<PhoneOutgoing className="h-5 w-5" />} 
+                />
+                <StatCard 
+                  label="Total calls (this cycle)" 
+                  value={data?.totalCallsThisCycle ?? 0} 
+                  icon={<Users className="h-5 w-5" />} 
+                />
+                <StatCard 
+                  label="Avg call duration" 
+                  value={`${data?.averageCallDuration ?? 0} min`} 
+                  icon={<History className="h-5 w-5" />} 
+                />
+              </>
             )}
           </div>
 
           {/* Usage bar */}
           <div>
             {loading ? (
-              <Skeleton className="h-24" />
+              <Skeleton className="h-32" />
             ) : (
               <UsageBar used={data?.planMinutesUsed ?? 0} limit={data?.planMinutesLimit ?? 0} />
             )}
             {!loading && data && (
-              <p className="mt-2 text-sm text-white/70">Plan renews on {formatDate(data.renewalDateISO)}.</p>
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-white/70">Plan renews on {formatDate(data.renewalDateISO)}</p>
+                <p className="text-xs text-white/50">
+                  Days remaining: {Math.ceil((new Date(data.renewalDateISO).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}
+                </p>
+              </div>
             )}
           </div>
         </section>

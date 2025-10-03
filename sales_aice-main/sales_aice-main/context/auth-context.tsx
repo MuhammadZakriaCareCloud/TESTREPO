@@ -76,7 +76,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [accessToken]);
 
   // ---- Auth actions ----
-  const login = async (email: string, password: string) => {debugger
+  // Mock login function (client-side only, no server calls)
+  const loginMock = async (email: string, password: string) => {
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Mock validation
+      if (!email || !password) {
+        toast.error('Please enter both email and password.', { position: 'bottom-right' });
+        return;
+      }
+
+      if (password.length < 3) {
+        toast.error('Password too short.', { position: 'bottom-right' });
+        return;
+      }
+
+      // Mock user data based on email
+      const mockUser: UserType = {
+        email: email,
+        name: email.split('@')[0],
+        role: email.includes('admin') ? 'admin' : 'user',
+      };
+
+      const mockToken = `mock_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      setSessionExpired(false);
+      setAccessToken(mockToken);
+      setUser(mockUser);
+
+      // Redirect by role
+      if (mockUser.role === 'admin') router.push('/admin/dashboard');
+      else router.push('/dashboard');
+
+      toast.success('Login successful! (Mock)', { position: 'bottom-right' });
+      return;
+
+    } catch (error) {
+      toast.error('Login failed. Please try again.', { position: 'bottom-right' });
+    }
+  };
+
+  // Real login function (commented out until API is ready)
+  const login = async (email: string, password: string) => {
+    // Use mock for now
+    return await loginMock(email, password);
+    
+    /* Uncomment when API is ready:
     try {
       const { data } = await axiosInstance.post<{ tokens?: any; user?: UserType; status?: string }>(
         '/api/auth/login/',
@@ -105,6 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       toast.error('Login failed. Please try again.', { position: 'bottom-right' });
     }
+    */
   };
 
   const logout = async () => {
