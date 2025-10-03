@@ -2,7 +2,25 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { PhoneIncoming, PhoneOutgoing, Users, History, CreditCard, Gauge } from "lucide-react";
+import { PhoneIncoming, PhoneOutgoing, Users, History, CreditCard, Gauge, TrendingUp, BarChart3 } from "lucide-react";
+import './dashboard-charts.css';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 
 // -----------------------------
 // Types
@@ -23,6 +41,31 @@ interface DashboardData {
   totalCallsThisCycle: number;
   averageCallDuration: number; // in minutes
   callSuccessRate: number;     // percentage
+  
+  // Chart Data
+  weeklyCallTrends: Array<{
+    day: string;
+    inbound: number;
+    outbound: number;
+    total: number;
+  }>;
+  
+  hourlyActivity: Array<{
+    hour: string;
+    calls: number;
+  }>;
+  
+  callTypeDistribution: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  
+  monthlyUsage: Array<{
+    month: string;
+    minutes: number;
+    calls: number;
+  }>;
 }
 
 // -----------------------------
@@ -117,6 +160,232 @@ function QuickAction({ href, label, icon }: { href: string; label: string; icon:
 }
 
 // -----------------------------
+// Chart Components
+// -----------------------------
+
+// Weekly Call Trends Line Chart
+function WeeklyTrendsChart({ data }: { data: DashboardData['weeklyCallTrends'] }) {
+  return (
+    <div className="chart-container rounded-2xl border border-white/10 bg-[#0E1627] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Weekly Call Trends</h3>
+          <p className="text-sm text-white/60">Inbound vs Outbound calls this week</p>
+        </div>
+        <TrendingUp className="h-5 w-5 text-blue-400" />
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="day" 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <YAxis 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F9FAFB'
+              }}
+            />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="inbound" 
+              stroke="#3B82F6" 
+              strokeWidth={3}
+              dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+              name="Inbound"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="outbound" 
+              stroke="#10B981" 
+              strokeWidth={3}
+              dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+              name="Outbound"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// Hourly Activity Bar Chart
+function HourlyActivityChart({ data }: { data: DashboardData['hourlyActivity'] }) {
+  return (
+    <div className="chart-container rounded-2xl border border-white/10 bg-[#0E1627] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Daily Activity</h3>
+          <p className="text-sm text-white/60">Calls by hour today</p>
+        </div>
+        <BarChart3 className="h-5 w-5 text-purple-400" />
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="hour" 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <YAxis 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F9FAFB'
+              }}
+            />
+            <Bar 
+              dataKey="calls" 
+              fill="#8B5CF6"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// Call Type Distribution Pie Chart
+function CallTypeChart({ data }: { data: DashboardData['callTypeDistribution'] }) {
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({
+    cx, cy, midAngle, innerRadius, outerRadius, percent
+  }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={500}
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  return (
+    <div className="chart-container rounded-2xl border border-white/10 bg-[#0E1627] p-6">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-white">Call Distribution</h3>
+        <p className="text-sm text-white/60">Breakdown by call type</p>
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderCustomizedLabel}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F9FAFB'
+              }}
+            />
+            <Legend 
+              wrapperStyle={{
+                color: '#F9FAFB',
+                fontSize: '12px'
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// Monthly Usage Area Chart
+function MonthlyUsageChart({ data }: { data: DashboardData['monthlyUsage'] }) {
+  return (
+    <div className="chart-container rounded-2xl border border-white/10 bg-[#0E1627] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Monthly Usage</h3>
+          <p className="text-sm text-white/60">Minutes and calls over time</p>
+        </div>
+        <Gauge className="h-5 w-5 text-emerald-400" />
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="month" 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <YAxis 
+              stroke="#9CA3AF"
+              fontSize={12}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F9FAFB'
+              }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="minutes" 
+              stroke="#10B981" 
+              fillOpacity={1} 
+              fill="url(#colorMinutes)"
+              strokeWidth={3}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------
 // Page
 // -----------------------------
 export default function DashboardPage() {
@@ -154,6 +423,42 @@ export default function DashboardPage() {
           // Additional metrics
           averageCallDuration: 3.2, // minutes
           callSuccessRate: 94.5, // percentage
+          
+          // Chart Data
+          weeklyCallTrends: [
+            { day: 'Mon', inbound: 18, outbound: 12, total: 30 },
+            { day: 'Tue', inbound: 22, outbound: 18, total: 40 },
+            { day: 'Wed', inbound: 25, outbound: 15, total: 40 },
+            { day: 'Thu', inbound: 20, outbound: 22, total: 42 },
+            { day: 'Fri', inbound: 28, outbound: 20, total: 48 },
+            { day: 'Sat', inbound: 15, outbound: 9, total: 24 },
+            { day: 'Sun', inbound: 12, outbound: 8, total: 20 },
+          ],
+          
+          hourlyActivity: [
+            { hour: '9 AM', calls: 8 },
+            { hour: '10 AM', calls: 15 },
+            { hour: '11 AM', calls: 22 },
+            { hour: '12 PM', calls: 18 },
+            { hour: '1 PM', calls: 12 },
+            { hour: '2 PM', calls: 25 },
+            { hour: '3 PM', calls: 28 },
+            { hour: '4 PM', calls: 24 },
+            { hour: '5 PM', calls: 16 },
+          ],
+          
+          callTypeDistribution: [
+            { name: 'Sales Calls', value: 128, color: '#3B82F6' },
+            { name: 'Support Calls', value: 96, color: '#10B981' },
+            { name: 'Follow-ups', value: 45, color: '#F59E0B' },
+            { name: 'Cold Calls', value: 32, color: '#EF4444' },
+          ],
+          
+          monthlyUsage: [
+            { month: 'Aug', minutes: 1850, calls: 180 },
+            { month: 'Sep', minutes: 1920, calls: 195 },
+            { month: 'Oct', minutes: 742, calls: 96 }, // Current month (partial)
+          ],
         };
         await new Promise((r) => setTimeout(r, 400));
         // -----------------------------------------------
@@ -274,6 +579,47 @@ export default function DashboardPage() {
             <QuickAction href="/billing" label="Billing / Subscription" icon={<CreditCard className="h-5 w-5" />} />
           </div>
         </section>
+
+        {/* Analytics Charts */}
+        {data && (
+          <section className="mt-8">
+            <h2 className="mb-6 text-lg font-semibold tracking-tight">Analytics & Insights</h2>
+            
+            {/* Main charts grid */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Weekly trends - spans full width on smaller screens */}
+              <div className="lg:col-span-2">
+                <WeeklyTrendsChart data={data.weeklyCallTrends} />
+              </div>
+              
+              {/* Hourly activity and call distribution */}
+              <HourlyActivityChart data={data.hourlyActivity} />
+              <CallTypeChart data={data.callTypeDistribution} />
+              
+              {/* Monthly usage - spans full width */}
+              <div className="lg:col-span-2">
+                <MonthlyUsageChart data={data.monthlyUsage} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Loading state for charts */}
+        {loading && (
+          <section className="mt-8">
+            <h2 className="mb-6 text-lg font-semibold tracking-tight">Analytics & Insights</h2>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="lg:col-span-2">
+                <Skeleton className="h-80" />
+              </div>
+              <Skeleton className="h-80" />
+              <Skeleton className="h-80" />
+              <div className="lg:col-span-2">
+                <Skeleton className="h-80" />
+              </div>
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
