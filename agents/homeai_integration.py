@@ -301,7 +301,52 @@ Remember: You're representing a real business with real solutions. Be authentic,
             'expected_duration': customer_context.get('expected_duration', '10-15 minutes'),
             'priority_level': customer_context.get('priority_level', 'medium')
         }
-
+    
+    def generate_response(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Generate AI response for testing or real-time conversation
+        Test ke liye ya real conversation ke liye AI response generate karta hai
+        """
+        if not self.api_key:
+            # Mock response for testing when API key is not configured
+            return {
+                'text': f"Hello! I received your message: '{message}'. This is a test response from your AI agent with {context.get('personality', 'friendly')} personality using {context.get('voice_model', 'default')} voice model.",
+                'audio_url': 'https://example.com/mock-audio.mp3',
+                'personality_analysis': {
+                    'detected_tone': context.get('personality', 'friendly'),
+                    'confidence': 95,
+                    'emotion': 'positive'
+                },
+                'processing_time': 150,
+                'success': True
+            }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/generate",
+                headers={
+                    'Authorization': f'Bearer {self.api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'message': message,
+                    'context': context or {},
+                    'voice_model': context.get('voice_model', 'en-US-female-1'),
+                    'personality': context.get('personality', 'friendly'),
+                    'response_format': 'text_and_audio',
+                    'max_response_length': 200
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"HomeAI generate response failed: {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"HomeAI generate response error: {str(e)}")
+            return None
 
 # Demo/Mock service for development
 class MockHomeAIService(HomeAIService):

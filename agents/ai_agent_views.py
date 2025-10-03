@@ -44,7 +44,7 @@ class AIAgentSetupAPIView(APIView):
         ),
         responses={201: "AI Agent created successfully"},
         operation_description="Create new AI Agent for client - completely blank initially",
-        tags=['AI Agent Management']
+        tags=['AI Agents']
     )
     def post(self, request):
         user = request.user
@@ -116,7 +116,7 @@ class AIAgentTrainingAPIView(APIView):
     @swagger_auto_schema(
         responses={200: "Agent training data"},
         operation_description="Get current training status and data",
-        tags=['AI Agent Training']
+        tags=['AI Agents']
     )
     def get(self, request):
         try:
@@ -172,7 +172,7 @@ class AIAgentTrainingAPIView(APIView):
         ),
         responses={200: "Training completed successfully"},
         operation_description="Train the AI Agent with client-specific content",
-        tags=['AI Agent Training']
+        tags=['AI Agents']
     )
     def post(self, request):
         try:
@@ -246,7 +246,7 @@ class AIAgentCallManagementAPIView(APIView):
         ],
         responses={200: "Agent call history and management"},
         operation_description="Get AI Agent's call management dashboard",
-        tags=['AI Agent Calls']
+        tags=['AI Agents']
     )
     def get(self, request):
         try:
@@ -353,7 +353,7 @@ class StartAICallAPIView(APIView):
         ),
         responses={200: "Call initiated successfully"},
         operation_description="Start AI-powered call with customer",
-        tags=['AI Agent Calls']
+        tags=['AI Agents']
     )
     def post(self, request):
         try:
@@ -477,7 +477,7 @@ class CallOutcomeAPIView(APIView):
         ),
         responses={200: "Call outcome updated and agent learned"},
         operation_description="Update call outcome and train AI agent from experience",
-        tags=['AI Agent Learning']
+        tags=['AI Agents']
     )
     def post(self, request):
         try:

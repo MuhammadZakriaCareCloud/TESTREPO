@@ -16,7 +16,7 @@ import stripe
 import json
 import logging
 
-from .models import SubscriptionPlan, Subscription, BillingHistory, UsageMetrics
+from .models import SubscriptionPlan, Subscription, BillingHistory, UsageAlert
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -26,35 +26,39 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class SubscriptionPlansAPIView(APIView):
-    """Get all available subscription plans"""
+    """Get all available subscription packages"""
     permission_classes = [permissions.AllowAny]
     
     @swagger_auto_schema(
-        responses={200: "List of subscription plans"},
-        operation_description="Get all available subscription plans",
+        responses={200: "List of subscription packages"},
+        operation_description="Get available subscription packages with features comparison",
         tags=['Subscriptions']
     )
     def get(self, request):
         plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
-        data = []
+        packages = []
         
         for plan in plans:
-            data.append({
+            packages.append({
                 'id': str(plan.id),
-                'name': plan.name,
+                'package_name': plan.name,
                 'plan_type': plan.plan_type,
-                'price': float(plan.price),
-                'billing_cycle': plan.billing_cycle,
-                'max_agents': plan.max_agents,
-                'max_minutes': plan.max_minutes,
-                'inbound_calls': plan.inbound_calls,
-                'outbound_calls': plan.outbound_calls,
-                'ai_assistance': plan.ai_assistance,
-                'analytics': plan.analytics,
-                'stripe_price_id': plan.stripe_price_id
+                'monthly_price': float(plan.price),
+                'features': {
+                    'call_minutes_limit': plan.call_minutes_limit,
+                    'agents_allowed': plan.agents_allowed,
+                    'analytics_access': plan.analytics_access,
+                    'advanced_analytics': plan.advanced_analytics,
+                },
+                'stripe_price_id': plan.stripe_price_id,
+                'description': f"{plan.call_minutes_limit} monthly minutes, {plan.agents_allowed} agent(s)"
             })
         
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({
+            'packages': packages,
+            'total_packages': len(packages),
+            'message': 'Available subscription packages'
+        }, status=status.HTTP_200_OK)
 
 
 class CreateSubscriptionAPIView(APIView):

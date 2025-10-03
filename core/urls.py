@@ -5,13 +5,14 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from .custom_schema_generator import CustomSchemaGenerator
 
-# API Documentation
+# API Documentation with organized tags
 schema_view = get_schema_view(
     openapi.Info(
-        title="Django Backend API",
+        title="Voice AI Backend API",
         default_version='v1',
-        description="Complete Django Backend with Authentication",
+        description="Complete Voice AI Backend - 6 Core Modules: Dashboard, Authentication, User Management, Subscriptions, AI Agents, Calls",
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="admin@example.com"),
         license=openapi.License(name="MIT License"),
@@ -19,6 +20,7 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=[permissions.AllowAny],
     authentication_classes=[],
+    generator_class=CustomSchemaGenerator
 )
 
 urlpatterns = [

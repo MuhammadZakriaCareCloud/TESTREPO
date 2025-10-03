@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from subscriptions.models import SubscriptionPlan, Subscription, BillingHistory, UsageMetrics
+from subscriptions.models import SubscriptionPlan, Subscription, BillingHistory, UsageAlert
 from agents.models import Agent, AgentPerformance
 from calls.models import CallSession, CallQueue, QuickAction
 from dashboard.models import SystemNotification, ActivityLog
