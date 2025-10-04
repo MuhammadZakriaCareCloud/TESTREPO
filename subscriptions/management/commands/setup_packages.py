@@ -17,6 +17,8 @@ class Command(BaseCommand):
             plan_type='starter',
             price=29.00,
             call_minutes_limit=1000,  # 1000 minutes monthly
+            minutes_inbound_limit=500,  # 500 inbound minutes
+            minutes_outbound_limit=500,  # 500 outbound minutes
             agents_allowed=1,
             analytics_access=False,
             advanced_analytics=False,
@@ -31,6 +33,8 @@ class Command(BaseCommand):
             plan_type='pro', 
             price=99.00,
             call_minutes_limit=3000,  # 3000 minutes monthly
+            minutes_inbound_limit=1500,  # 1500 inbound minutes
+            minutes_outbound_limit=1500,  # 1500 outbound minutes
             agents_allowed=5,
             analytics_access=True,
             advanced_analytics=False,
@@ -45,6 +49,8 @@ class Command(BaseCommand):
             plan_type='enterprise',
             price=299.00,
             call_minutes_limit=10000,  # 10000 minutes monthly
+            minutes_inbound_limit=5000,  # 5000 inbound minutes
+            minutes_outbound_limit=5000,  # 5000 outbound minutes
             agents_allowed=25,
             analytics_access=True,
             advanced_analytics=True,  # API access included

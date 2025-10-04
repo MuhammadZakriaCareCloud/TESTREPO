@@ -39,6 +39,8 @@ class SubscriptionPlan(models.Model):
     
     # Core Features
     call_minutes_limit = models.IntegerField(default=1000, help_text="Monthly call minutes")
+    minutes_inbound_limit = models.IntegerField(default=500, help_text="Monthly inbound call minutes")
+    minutes_outbound_limit = models.IntegerField(default=500, help_text="Monthly outbound call minutes")
     agents_allowed = models.IntegerField(default=1, help_text="Number of agents allowed")
     ai_agents_allowed = models.IntegerField(default=1, help_text="AI agents allowed")
     concurrent_calls = models.IntegerField(default=5, help_text="Concurrent calls limit")
@@ -63,8 +65,8 @@ class SubscriptionPlan(models.Model):
     backup_retention_days = models.IntegerField(default=30)
     
     # Stripe Integration
-    stripe_price_id = models.CharField(max_length=100, blank=True)
-    stripe_product_id = models.CharField(max_length=100, blank=True)
+    stripe_price_id = models.CharField(max_length=100, blank=True, null=True)
+    stripe_product_id = models.CharField(max_length=100, blank=True, null=True)
     
     # Admin
     is_active = models.BooleanField(default=True)
@@ -99,6 +101,15 @@ class SubscriptionPlan(models.Model):
         elif self.billing_cycle == 'year':
             return self.price / 12
         return self.price
+    
+    @property
+    def features(self):
+        """Return features in the required structure for frontend"""
+        return {
+            'campaigns': self.auto_campaigns,
+            'api_access': self.api_access,
+            'advanced_analytics': self.advanced_analytics if self.analytics_access else False,
+        }
     
     def create_stripe_product(self):
         """Create Stripe product and price"""

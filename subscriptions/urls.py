@@ -1,49 +1,42 @@
 from django.urls import path
-from .package_views import (
-    PackageSetupView,
-    UserPackageSelectionView,
-    SubscriptionActionView
+from .admin_package_management import AdminPackageManagementAPIView, AdminIndividualPackageAPIView
+from .user_subscription_api import (
+    UserPackageSelectionAPIView,
+    UserSubscriptionManagementAPIView,
+    UserBillingPortalAPIView,
+    UserInvoiceManagementAPIView,
+    UserSubscribeAPIView,
+    AdminStatisticsAPIView
 )
-from .simplified_views import (
-    PackageSelectionAPIView,
-    SubscriptionManagementAPIView,
-    BillingInvoicesAPIView,
-    StripeWebhookAPIView
+from .stripe_integration import StripeWebhookAPIView
+from .usage_alerts_api import (
+    UserUsageAlertsAPIView,
+    PlanFeatureAccessAPIView
 )
-from .billing_views import (
-    SubscriptionPlansAPIView,
-    CreateSubscriptionAPIView,
-    SubscriptionManagementAPIView as BillingSubscriptionManagementAPIView,
-    BillingHistoryAPIView,
-    PaymentMethodsAPIView,
-    UsageTrackingAPIView,
-    StripeWebhookAPIView as BillingStripeWebhookAPIView
-)
-from . import views  # Keep old views for backward compatibility
+
+# 🎯 Clean and organized subscription URLs based on image requirements
+# Meaningful names, organized by user type, focused on essential functionality
 
 urlpatterns = [
-    # NEW: Complete Stripe Billing System
-    path('api/plans/', SubscriptionPlansAPIView.as_view(), name='api-subscription-plans'),
-    path('api/subscribe/', CreateSubscriptionAPIView.as_view(), name='api-create-subscription'),
-    path('api/manage/', BillingSubscriptionManagementAPIView.as_view(), name='api-subscription-management'),
-    path('api/billing-history/', BillingHistoryAPIView.as_view(), name='api-billing-history'),
-    path('api/payment-methods/', PaymentMethodsAPIView.as_view(), name='api-payment-methods'),
-    path('api/usage/', UsageTrackingAPIView.as_view(), name='api-usage-tracking'),
-    path('api/stripe-webhook/', BillingStripeWebhookAPIView.as_view(), name='api-stripe-webhook'),
+    # 🔐 ADMIN ONLY - Package Management (CRUD)
+    # Admin creates/manages subscription packages that users can choose from
+    path('admin/packages/', AdminPackageManagementAPIView.as_view(), name='admin-packages'),
+    path('admin/packages/<uuid:package_id>/', AdminIndividualPackageAPIView.as_view(), name='admin-package-detail'),
+    path('admin/statistics/', AdminStatisticsAPIView.as_view(), name='admin-statistics'),
     
-    # Package System (UI-focused)
-    path('admin/packages/', PackageSetupView.as_view(), name='admin-package-setup'),
-    path('user/packages/', UserPackageSelectionView.as_view(), name='user-package-selection'),
-    path('user/actions/', SubscriptionActionView.as_view(), name='subscription-actions'),
+    # 👤 USER APIS - Package Selection & Subscription Management
+    # Users browse available packages and manage their subscriptions
+    path('user/packages/', UserPackageSelectionAPIView.as_view(), name='user-packages'),
+    path('user/subscribe/', UserSubscribeAPIView.as_view(), name='user-subscribe'),
+    path('user/subscription/', UserSubscriptionManagementAPIView.as_view(), name='user-subscription'),
+    path('user/billing-portal/', UserBillingPortalAPIView.as_view(), name='user-billing-portal'),
+    path('user/invoices/', UserInvoiceManagementAPIView.as_view(), name='user-invoices'),
     
-    # Simplified System (Alternative)
-    path('packages/', PackageSelectionAPIView.as_view(), name='package-selection'),
-    path('manage/', SubscriptionManagementAPIView.as_view(), name='subscription-management'),
-    path('invoices/', BillingInvoicesAPIView.as_view(), name='billing-invoices'),
-    path('webhook/', StripeWebhookAPIView.as_view(), name='stripe-webhook'),
+    # 📊 USAGE & ALERTS - Monitor usage and plan restrictions
+    path('user/usage-alerts/', UserUsageAlertsAPIView.as_view(), name='user-usage-alerts'),
+    path('user/feature-access/', PlanFeatureAccessAPIView.as_view(), name='user-feature-access'),
     
-    # Legacy API endpoints (backward compatibility)
-    path('plans/', views.SubscriptionPlansAPIView.as_view(), name='subscription-plans'),
-    path('current/', views.UserSubscriptionAPIView.as_view(), name='current-subscription'),
-    path('billing-history/', views.BillingHistoryAPIView.as_view(), name='billing-history'),
+    # 💳 STRIPE INTEGRATION
+    # Webhook for handling Stripe events (payment success/failure, subscription updates)
+    path('webhook/stripe/', StripeWebhookAPIView.as_view(), name='stripe-webhook'),
 ]

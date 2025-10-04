@@ -19,14 +19,14 @@ User = get_user_model()
 class ComprehensiveDashboardAPIView(APIView):
     """
     Comprehensive Dashboard API matching TypeScript DashboardData interface
-    ADMIN ONLY ACCESS - Returns structured dashboard data for all users
+    USER ACCESS - Returns structured dashboard data for the authenticated user
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.IsAuthenticated]
     
     @swagger_auto_schema(
         tags=['Dashboard'],
-        operation_summary="Comprehensive Dashboard Data",
-        operation_description="Get comprehensive dashboard data matching DashboardData interface - ADMIN ONLY",
+        operation_summary="User Dashboard Data",
+        operation_description="Get comprehensive dashboard data for the authenticated user",
         responses={
             200: openapi.Response(
                 description="Dashboard data",
@@ -91,78 +91,83 @@ class ComprehensiveDashboardAPIView(APIView):
                 )
             ),
             401: "Unauthorized - Authentication required",
-            403: "Forbidden - Admin access required",
             404: "Data not found"
         }
     )
     def get(self, request):
-        """Get comprehensive dashboard data matching TypeScript interface - ADMIN ONLY"""
-        # Admin can access system-wide data
+        """Get comprehensive dashboard data for the authenticated user"""
+        user = request.user
         
         try:
-            # Calculate current month period for admin overview
-            today = timezone.now().date()
-            current_month_start = today.replace(day=1)
-            current_month_end = today
+            # Get user's subscription to determine billing cycle
+            user_subscription = Subscription.objects.filter(user=user, status='active').first()
             
-            # Get all system calls for current month
-            current_month_calls = CallSession.objects.filter(
-                started_at__date__gte=current_month_start,
-                started_at__date__lte=current_month_end
+            if user_subscription:
+                # Use subscription billing cycle
+                billing_start = user_subscription.current_period_start.date()
+                billing_end = user_subscription.current_period_end.date()
+            else:
+                # Fallback to current month if no subscription
+                today = timezone.now().date()
+                billing_start = today.replace(day=1)
+                billing_end = today
+            
+            # Get user's calls for current billing cycle
+            current_cycle_calls = CallSession.objects.filter(
+                user=user,  # Filter by current user
+                started_at__date__gte=billing_start,
+                started_at__date__lte=billing_end
             )
             
-            inbound_calls = current_month_calls.filter(call_type='inbound').count()
-            outbound_calls = current_month_calls.filter(call_type='outbound').count()
+            inbound_calls = current_cycle_calls.filter(call_type='inbound').count()
+            outbound_calls = current_cycle_calls.filter(call_type='outbound').count()
             total_calls = inbound_calls + outbound_calls
             
-            # Calculate average call duration and success rate (system-wide)
-            completed_calls = current_month_calls.filter(status='completed')
+            # Calculate average call duration and success rate for user
+            completed_calls = current_cycle_calls.filter(status='completed')
             avg_duration = completed_calls.aggregate(avg=Avg('duration'))['avg'] or 0
             avg_duration_minutes = round(avg_duration / 60, 2) if avg_duration else 0
             
             success_rate = (completed_calls.count() / total_calls * 100) if total_calls > 0 else 0
             
-            # Get system-wide plan statistics
-            active_subscriptions = Subscription.objects.filter(status='active')
-            most_popular_plan = active_subscriptions.values('plan__name').annotate(
-                count=Count('id')
-            ).order_by('-count').first()
+            # Get user's subscription and plan information
+            if user_subscription:
+                plan_name = user_subscription.plan.name
+                plan_minutes_limit = user_subscription.plan.call_minutes_limit
+                plan_minutes_used = user_subscription.minutes_used_this_month
+                renewal_date = user_subscription.current_period_end
+                billing_cycle_start = user_subscription.current_period_start
+            else:
+                plan_name = "No Subscription"
+                plan_minutes_limit = 0
+                plan_minutes_used = 0
+                renewal_date = billing_end
+                billing_cycle_start = billing_start
             
-            plan_name = most_popular_plan['plan__name'] if most_popular_plan else "No Active Plans"
-            
-            # System-wide usage metrics
-            total_minutes_used = active_subscriptions.aggregate(
-                total=Sum('minutes_used_this_month')
-            )['total'] or 0
-            
-            total_minutes_limit = active_subscriptions.aggregate(
-                total=Sum('plan__call_minutes_limit')
-            )['total'] or 0
-            
-            # Generate chart data (system-wide)
-            weekly_trends = self._get_weekly_call_trends_admin()
-            hourly_activity = self._get_hourly_activity_admin()
-            call_distribution = self._get_call_type_distribution_admin()
-            monthly_usage = self._get_monthly_usage_admin()
+            # Generate chart data for user
+            weekly_trends = self._get_weekly_call_trends_user(user)
+            hourly_activity = self._get_hourly_activity_user(user)
+            call_distribution = self._get_call_type_distribution_user(user)
+            monthly_usage = self._get_monthly_usage_user(user)
             
             dashboard_data = {
-                # Summary Stats (System-wide for Admin)
+                # Summary Stats for User
                 'inboundCalls': inbound_calls,
                 'outboundCalls': outbound_calls,
                 
-                # Subscription Info (System-wide overview)
+                # User Subscription Info
                 'planName': plan_name,
-                'planMinutesLimit': total_minutes_limit,
-                'planMinutesUsed': total_minutes_used,
-                'renewalDateISO': current_month_end.isoformat(),
-                'billingCycleStart': current_month_start.isoformat(),
+                'planMinutesLimit': plan_minutes_limit,
+                'planMinutesUsed': plan_minutes_used,
+                'renewalDateISO': renewal_date.isoformat() if hasattr(renewal_date, 'isoformat') else billing_end.isoformat(),
+                'billingCycleStart': billing_cycle_start.isoformat() if hasattr(billing_cycle_start, 'isoformat') else billing_start.isoformat(),
                 
-                # Additional metrics (System-wide)
+                # User metrics
                 'totalCallsThisCycle': total_calls,
                 'averageCallDuration': avg_duration_minutes,
                 'callSuccessRate': round(success_rate, 2),
                 
-                # Chart Data (System-wide)
+                # Chart Data for User
                 'weeklyCallTrends': weekly_trends,
                 'hourlyActivity': hourly_activity,
                 'callTypeDistribution': call_distribution,
@@ -176,8 +181,8 @@ class ComprehensiveDashboardAPIView(APIView):
                 'error': f'Error generating dashboard data: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _get_weekly_call_trends_admin(self):
-        """Generate weekly call trends for the last 7 days - ADMIN (system-wide)"""
+    def _get_weekly_call_trends_user(self, user):
+        """Generate weekly call trends for the last 7 days for specific user"""
         trends = []
         end_date = timezone.now().date()
         start_date = end_date - timedelta(days=6)  # Last 7 days
@@ -185,6 +190,7 @@ class ComprehensiveDashboardAPIView(APIView):
         for i in range(7):
             current_date = start_date + timedelta(days=i)
             day_calls = CallSession.objects.filter(
+                user=user,  # Filter by user
                 started_at__date=current_date
             )
             
@@ -201,8 +207,8 @@ class ComprehensiveDashboardAPIView(APIView):
         
         return trends
     
-    def _get_hourly_activity_admin(self):
-        """Generate hourly activity for the last 24 hours - ADMIN (system-wide)"""
+    def _get_hourly_activity_user(self, user):
+        """Generate hourly activity for the last 24 hours for specific user"""
         activity = []
         now = timezone.now()
         
@@ -211,6 +217,7 @@ class ComprehensiveDashboardAPIView(APIView):
             hour_end = hour_start + timedelta(hours=1)
             
             calls = CallSession.objects.filter(
+                user=user,  # Filter by user
                 started_at__gte=hour_start,
                 started_at__lt=hour_end
             ).count()
@@ -222,12 +229,13 @@ class ComprehensiveDashboardAPIView(APIView):
         
         return activity
     
-    def _get_call_type_distribution_admin(self):
-        """Generate call type distribution data - ADMIN (system-wide)"""
+    def _get_call_type_distribution_user(self, user):
+        """Generate call type distribution data for specific user"""
         today = timezone.now().date()
         current_month_start = today.replace(day=1)
         
         month_calls = CallSession.objects.filter(
+            user=user,  # Filter by user
             started_at__date__gte=current_month_start,
             started_at__date__lte=today
         )
@@ -254,8 +262,8 @@ class ComprehensiveDashboardAPIView(APIView):
         
         return distribution
     
-    def _get_monthly_usage_admin(self):
-        """Generate monthly usage data for the last 6 months - ADMIN (system-wide)"""
+    def _get_monthly_usage_user(self, user):
+        """Generate monthly usage data for the last 6 months for specific user"""
         usage = []
         current_date = timezone.now().date()
         
@@ -273,8 +281,9 @@ class ComprehensiveDashboardAPIView(APIView):
                 else:
                     month_end = month_start.replace(month=month_start.month+1, day=1) - timedelta(days=1)
             
-            # System-wide calls for this month
+            # User's calls for this month
             month_calls = CallSession.objects.filter(
+                user=user,  # Filter by user
                 started_at__date__gte=month_start,
                 started_at__date__lte=month_end
             )

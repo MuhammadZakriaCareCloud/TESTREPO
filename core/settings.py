@@ -80,18 +80,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # },
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'SalesAiceDB',
-        'USER': 'postgres',  # or 'postgres' if that was a typo
-        'PASSWORD': 'Trivision8990',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    #  'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'SalesAiceDB',
+    #     'USER': 'postgres',  # or 'postgres' if that was a typo
+    #     'PASSWORD': 'Trivision8990',
+    #     'HOST': 'localhost',
+    #     'PORT': '5432',
+    # }
 }
 
 # Custom User Model
@@ -282,6 +282,9 @@ WEBHOOK_SECRET_KEY = config('WEBHOOK_SECRET_KEY', default='your-webhook-secret-k
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='pk_test_placeholder')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='sk_test_placeholder')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='whsec_placeholder')
+
+# Frontend URL for redirects
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
 # Stripe Settings
 STRIPE_LIVE_MODE = config('STRIPE_LIVE_MODE', default=False, cast=bool)
