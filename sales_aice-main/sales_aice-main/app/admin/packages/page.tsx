@@ -6,6 +6,12 @@ import { Plus, Trash2, RefreshCcw, Pencil, Eye } from 'lucide-react';
 import { axiosInstance } from '../../../utils/axiosInstance';
 import { toast } from 'sonner';
 
+type ApiResponse = {
+  success: boolean;
+  message: string;
+  packages: AdminPackage[];
+};
+
 type AdminPackage = {
   id: number | string;
   name: string;
@@ -39,8 +45,9 @@ export default function PackagesListPage() {
     try {debugger
       setLoading(true);
       setError(null);
-      const { data } = await axiosInstance.get<AdminPackage[]>('/api/subscriptions/packages/');
-      setRows(data.map(normalize));
+      const response = await axiosInstance.get<ApiResponse>('/api/subscriptions/admin/packages/');
+      const packages = response.data.packages || [];
+      setRows(packages.map(normalize));
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load packages');
     } finally {
@@ -57,7 +64,7 @@ export default function PackagesListPage() {
     if (!ok) return;
     try {debugger
       setDeletingId(id);
-      await axiosInstance.delete(`/api/accounts/admin/packages/${id}/`);
+      await axiosInstance.delete(`api/subscriptions/admin/packages/${id}/`);
       toast.success('Package deleted');
       setRows(prev => prev.filter(r => r.id !== id));
     } catch (e: any) {

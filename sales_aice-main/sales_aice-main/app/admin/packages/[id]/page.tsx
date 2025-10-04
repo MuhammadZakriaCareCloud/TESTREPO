@@ -53,7 +53,7 @@ export default function PackageDetailPage() {debugger
       try {debugger
         setLoading(true);
         setError(null);
-        const { data } = await axiosInstance.get<AdminPackage>(`/api/accounts/admin/packages/${pkgId}/`);
+        const { data } = await axiosInstance.get<AdminPackage>(`api/subscriptions/admin/packages/${pkgId}/`);
         setData(normalize(data));
       } catch (e: any) {
         const msg = e?.response?.status === 404 ? 'Package not found' : (e?.message ?? 'Failed to load');

@@ -92,7 +92,7 @@ export default function NewPackagePage() {
 
     try {debugger
       setSaving(true);
-      await axiosInstance.post('/api/accounts/admin/packages/', payload);
+      await axiosInstance.post('/api/subscriptions/admin/packages/', payload);
       toast.success('Package created');
       router.push('/admin/packages');
     } catch (e: any) {

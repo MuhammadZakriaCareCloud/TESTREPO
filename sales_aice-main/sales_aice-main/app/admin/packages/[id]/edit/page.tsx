@@ -57,7 +57,7 @@ export default function EditPackagePage() {
       try {debugger
         setLoading(true);
         setError(null);
-        const { data } = await axiosInstance.get<AdminPackage>(`/api/accounts/admin/packages/${pkgId}/`);
+        const { data } = await axiosInstance.get<AdminPackage>(`api/subscriptions/admin/packages/${pkgId}/`);
         const p = normalize(data);
 
         setName(p.name);
@@ -107,7 +107,7 @@ export default function EditPackagePage() {
 
     try {debugger
       setSaving(true);
-      await axiosInstance.patch(`/api/accounts/admin/packages/${pkgId}/`, payload);
+      await axiosInstance.put(`api/subscriptions/admin/packages/${pkgId}/`, payload);
       toast.success('Package saved');
       router.push('/admin/packages');
     } catch (e: any) {
@@ -123,7 +123,7 @@ export default function EditPackagePage() {
     if (!ok) return;
     try {debugger
       setDeleting(true);
-      await axiosInstance.delete(`/api/accounts/admin/packages/${pkgId}/`);
+      await axiosInstance.delete(`api/subscriptions/admin/packages/${pkgId}/`);
       toast.success('Package deleted');
       router.push('/admin/packages');
     } catch (e: any) {
