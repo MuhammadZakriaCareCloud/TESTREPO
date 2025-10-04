@@ -13,12 +13,12 @@ class UserTypeAPIView(APIView):
     """
     User Type API - Returns users in simple TypeScript UserType format
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.IsAuthenticated]  # Any authenticated user can access
     
     @swagger_auto_schema(
-        tags=['User Management'],
-        operation_summary="Get Users in UserType Format",
-        operation_description="Get all users in the exact TypeScript UserType interface format",
+        tags=['User Management - Authenticated'],
+        operation_summary="Get Users in UserType Format (All Authenticated Users)",
+        operation_description="Get all users in the exact TypeScript UserType interface format - Any authenticated user can access",
         responses={
             200: openapi.Response(
                 description="List of users in UserType format",
@@ -68,8 +68,7 @@ class UserTypeAPIView(APIView):
                     ]
                 }
             ),
-            401: openapi.Response(description="Authentication required"),
-            403: openapi.Response(description="Admin access required")
+            401: openapi.Response(description="Authentication required")
         }
     )
     def get(self, request):
@@ -130,9 +129,9 @@ class UserTypeAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @swagger_auto_schema(
-        tags=['User Management'],
-        operation_summary="Update User Subscription Status",
-        operation_description="Update a user's subscription status",
+        tags=['User Management - Authenticated'],
+        operation_summary="Update User Subscription Status (Authenticated Users)",
+        operation_description="Update a user's subscription status - Any authenticated user can access",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['email', 'subscription_status'],
