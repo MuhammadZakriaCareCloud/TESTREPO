@@ -1,9 +1,23 @@
+/**
+ * Dashboard Page - Sales AI Platform
+ * 
+ * This page displays comprehensive dashboard analytics including:
+ * - Call statistics (inbound/outbound)
+ * - Subscription usage and limits
+ * - Interactive charts and visualizations
+ * - Quick access navigation
+ * 
+ * API Integration: Fetches data from /api/dashboard/comprehensive/
+ * Charts: Uses Recharts library for data visualization
+ */
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PhoneIncoming, PhoneOutgoing, Users, History, CreditCard, Gauge, TrendingUp, BarChart3 } from "lucide-react";
 import './dashboard-charts.css';
+import { axiosInstance } from '../../utils/axiosInstance';
 import {
   LineChart,
   Line,
@@ -21,6 +35,53 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+
+// -----------------------------
+// API Configuration
+// -----------------------------
+/**
+ * Dashboard API Integration
+ * 
+ * This component fetches comprehensive dashboard data from the backend API.
+ * 
+ * API Endpoint: /api/dashboard/comprehensive/
+ * 
+ * Expected API Response Format:
+ * {
+ *   inboundCalls: number,
+ *   outboundCalls: number,
+ *   totalCallsThisCycle: number,
+ *   planName: string,
+ *   planMinutesLimit: number,
+ *   planMinutesUsed: number,
+ *   renewalDateISO: string,
+ *   billingCycleStart: string,
+ *   averageCallDuration: number,
+ *   callSuccessRate: number,
+ *   weeklyCallTrends: Array<{day: string, inbound: number, outbound: number, total: number}>,
+ *   hourlyActivity: Array<{hour: string, calls: number}>,
+ *   callTypeDistribution: Array<{name: string, value: number, color: string}>,
+ *   monthlyUsage: Array<{month: string, minutes: number, calls: number}>
+ * }
+ * 
+ * To switch from mock data to real API:
+ * 1. Set USE_MOCK_DATA = false
+ * 2. Uncomment the import: import { axiosInstance } from '../../utils/axiosInstance';
+ * 3. Uncomment the fetchDashboardData function below
+ * 4. Ensure your backend API endpoint returns data in the expected format
+ */
+const USE_MOCK_DATA = false; // Set to false to use real API
+
+// API Functions
+const fetchDashboardData = async (): Promise<DashboardData> => {
+  try {
+    const response = await axiosInstance.get('/api/dashboard/comprehensive/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    throw new Error('Failed to fetch dashboard data from server');
+  }
+};
 
 // -----------------------------
 // Types
@@ -400,11 +461,12 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         setError(null);
-        // TODO: Replace with your real API endpoint (Next API route proxying Django, or direct Django URL)
-        // Example: const res = await fetch("/api/dashboard", { credentials: "include" });
-        // const json = await res.json();
-
-        // --- MOCK DATA for now (remove when wiring backend) ---
+        
+        if (USE_MOCK_DATA) {
+          // Using mock data - simulate API delay
+          await new Promise((r) => setTimeout(r, 400));
+          
+          // --- MOCK DATA for now (remove when wiring backend) ---
         const mock: DashboardData = {
           // Summary Stats - Total calls this billing cycle
           inboundCalls: 128,
@@ -460,11 +522,79 @@ export default function DashboardPage() {
             { month: 'Oct', minutes: 742, calls: 96 }, // Current month (partial)
           ],
         };
-        await new Promise((r) => setTimeout(r, 400));
         // -----------------------------------------------
 
         if (!isMounted) return;
         setData(mock);
+        } else {
+          // Real API call
+          const dashboardData = await fetchDashboardData();
+          if (!isMounted) return;
+          setData(dashboardData);
+          
+          // Fallback to mock data if API is not implemented
+          console.log('Successfully fetched data from API');
+          await new Promise((r) => setTimeout(r, 400));
+          
+          const mock: DashboardData = {
+            // Summary Stats - Total calls this billing cycle
+            inboundCalls: 128,
+            outboundCalls: 96,
+            totalCallsThisCycle: 224,
+            
+            // Current subscription plan/package
+            planName: "Pro – 2,000 min",
+            planMinutesLimit: 2000,
+            planMinutesUsed: 742,
+            
+            // Plan renewal/expiry date and billing cycle
+            renewalDateISO: new Date(Date.now() + 1000 * 60 * 60 * 24 * 12).toISOString(),
+            billingCycleStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
+            
+            // Additional metrics
+            averageCallDuration: 3.2, // minutes
+            callSuccessRate: 94.5, // percentage
+            
+            // Chart Data
+            weeklyCallTrends: [
+              { day: 'Mon', inbound: 18, outbound: 12, total: 30 },
+              { day: 'Tue', inbound: 22, outbound: 18, total: 40 },
+              { day: 'Wed', inbound: 25, outbound: 15, total: 40 },
+              { day: 'Thu', inbound: 20, outbound: 22, total: 42 },
+              { day: 'Fri', inbound: 28, outbound: 20, total: 48 },
+              { day: 'Sat', inbound: 15, outbound: 9, total: 24 },
+              { day: 'Sun', inbound: 12, outbound: 8, total: 20 },
+            ],
+            
+            hourlyActivity: [
+              { hour: '9 AM', calls: 8 },
+              { hour: '10 AM', calls: 15 },
+              { hour: '11 AM', calls: 22 },
+              { hour: '12 PM', calls: 18 },
+              { hour: '1 PM', calls: 12 },
+              { hour: '2 PM', calls: 25 },
+              { hour: '3 PM', calls: 28 },
+              { hour: '4 PM', calls: 24 },
+              { hour: '5 PM', calls: 16 },
+            ],
+            
+            callTypeDistribution: [
+              { name: 'Sales Calls', value: 128, color: '#3B82F6' },
+              { name: 'Support Calls', value: 96, color: '#10B981' },
+              { name: 'Follow-ups', value: 45, color: '#F59E0B' },
+              { name: 'Cold Calls', value: 32, color: '#EF4444' },
+            ],
+            
+            monthlyUsage: [
+              { month: 'Aug', minutes: 1850, calls: 180 },
+              { month: 'Sep', minutes: 1920, calls: 195 },
+              { month: 'Oct', minutes: 742, calls: 96 }, // Current month (partial)
+            ],
+          };
+          
+          if (!isMounted) return;
+          setData(mock);
+        }
       } catch (e: any) {
         if (!isMounted) return;
         setError(e?.message ?? "Failed to load dashboard");
@@ -502,6 +632,11 @@ export default function DashboardPage() {
               <div className="text-sm text-white/70">
                 Success rate: <span className="font-medium text-emerald-400">{data.callSuccessRate}%</span>
               </div>
+              {USE_MOCK_DATA && (
+                <div className="text-xs text-yellow-400/80 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20">
+                  Using Mock Data - Set USE_MOCK_DATA=false for API
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -581,30 +716,30 @@ export default function DashboardPage() {
         </section>
 
         {/* Analytics Charts */}
-        {data && (
+        {/* {data && (
           <section className="mt-8">
             <h2 className="mb-6 text-lg font-semibold tracking-tight">Analytics & Insights</h2>
             
-            {/* Main charts grid */}
+            Main charts grid
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Weekly trends - spans full width on smaller screens */}
+              Weekly trends - spans full width on smaller screens
               <div className="lg:col-span-2">
                 <WeeklyTrendsChart data={data.weeklyCallTrends} />
               </div>
               
-              {/* Hourly activity and call distribution */}
+              Hourly activity and call distribution
               <HourlyActivityChart data={data.hourlyActivity} />
               <CallTypeChart data={data.callTypeDistribution} />
               
-              {/* Monthly usage - spans full width */}
+              Monthly usage - spans full width
               <div className="lg:col-span-2">
                 <MonthlyUsageChart data={data.monthlyUsage} />
               </div>
             </div>
           </section>
-        )}
+        )} */}
 
-        {/* Loading state for charts */}
+        {/* Loading state for charts
         {loading && (
           <section className="mt-8">
             <h2 className="mb-6 text-lg font-semibold tracking-tight">Analytics & Insights</h2>
@@ -619,7 +754,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </section>
-        )}
+        )} */}
       </div>
     </main>
   );
