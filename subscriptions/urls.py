@@ -8,17 +8,23 @@ from .user_subscription_api import (
     UserSubscribeAPIView,
     AdminStatisticsAPIView
 )
+# from .first_login_api import UserFirstLoginPackageSelectionAPIView
 from .stripe_integration import StripeWebhookAPIView
 from .usage_alerts_api import (
     UserUsageAlertsAPIView,
     PlanFeatureAccessAPIView
 )
+from .public_packages_api import PublicPackagesAPIView
 
 # 🎯 Clean and organized subscription URLs based on image requirements
 # Meaningful names, organized by user type, focused on essential functionality
 
 urlpatterns = [
-    # 🔐 ADMIN ONLY - Package Management (CRUD)
+    # 🌐 PUBLIC ACCESS - Package Viewing (No Authentication Required)
+    # Anyone can view available packages before signing up
+    path('packages/', PublicPackagesAPIView.as_view(), name='public-packages'),
+    
+    # 🔐 ADMIN ONLY - Package Management (CRUD)  
     # Admin creates/manages subscription packages that users can choose from
     path('admin/packages/', AdminPackageManagementAPIView.as_view(), name='admin-packages'),
     path('admin/packages/<uuid:package_id>/', AdminIndividualPackageAPIView.as_view(), name='admin-package-detail'),
@@ -26,6 +32,7 @@ urlpatterns = [
     
     # 👤 USER APIS - Package Selection & Subscription Management
     # Users browse available packages and manage their subscriptions
+    # path('user/first-login/', UserFirstLoginPackageSelectionAPIView.as_view(), name='user-first-login'),
     path('user/packages/', UserPackageSelectionAPIView.as_view(), name='user-packages'),
     path('user/subscribe/', UserSubscribeAPIView.as_view(), name='user-subscribe'),
     path('user/subscription/', UserSubscriptionManagementAPIView.as_view(), name='user-subscription'),

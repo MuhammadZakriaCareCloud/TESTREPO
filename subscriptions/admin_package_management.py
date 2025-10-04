@@ -16,15 +16,15 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class AdminPackageManagementAPIView(APIView):
     """
-    Admin Package Management - CRUD operations for subscription packages
+    Package Management - CRUD operations for subscription packages (Now Public Access)
     Based on AdminPackage TypeScript interface
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.AllowAny]  # Made public - no authentication required
     
     @swagger_auto_schema(
-        tags=['Admin - Package Management'],
+        tags=['Package Management'],
         operation_summary="Get All Packages",
-        operation_description="Get all subscription packages with subscriber counts - ADMIN ONLY",
+        operation_description="Get all subscription packages with subscriber counts - PUBLIC ACCESS (No Auth Required)",
         responses={
             200: openapi.Response(
                 description="List of packages",
@@ -308,14 +308,14 @@ class AdminPackageManagementAPIView(APIView):
 
 class AdminIndividualPackageAPIView(APIView):
     """
-    Individual Package Management - GET/PUT/DELETE specific package
+    Individual Package Management - GET/PUT/DELETE specific package (Now Public Access)
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.AllowAny]  # Made public - no authentication required
     
     @swagger_auto_schema(
-        tags=['Admin - Package Management'],
+        tags=['Package Management'],
         operation_summary="Get Single Package",
-        operation_description="Get details of a specific package - ADMIN ONLY",
+        operation_description="Get details of a specific package - PUBLIC ACCESS (No Auth Required)",
         responses={
             200: "Package details",
             404: "Package not found",
