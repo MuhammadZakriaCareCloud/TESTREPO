@@ -16,14 +16,14 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class AdminPackageManagementAPIView(APIView):
     """
-    Package Management - CRUD operations for subscription packages (Now Public Access)
+    Package Management - GET is public, CRUD operations require admin access
     Based on AdminPackage TypeScript interface
     """
-    permission_classes = [permissions.AllowAny]  # Made public - no authentication required
+    permission_classes = [permissions.AllowAny]  # Allow public access, check admin in individual methods
     
     @swagger_auto_schema(
-        tags=['Package Management'],
-        operation_summary="Get All Packages",
+        tags=['Package Management - Public'],
+        operation_summary="Get All Packages (Public)",
         operation_description="Get all subscription packages with subscriber counts - PUBLIC ACCESS (No Auth Required)",
         responses={
             200: openapi.Response(
@@ -66,7 +66,8 @@ class AdminPackageManagementAPIView(APIView):
         }
     )
     def get(self, request):
-        """Get all packages with subscriber counts"""
+        """Get all packages with subscriber counts - Public access allowed"""
+        # No authentication required for viewing packages
         packages = SubscriptionPlan.objects.annotate(
             subscriber_count=Count('subscription')
         ).order_by('-created_at')
@@ -187,7 +188,13 @@ class AdminPackageManagementAPIView(APIView):
         }
     )
     def post(self, request):
-        """Create new subscription package"""
+        """Create new subscription package - Admin only"""
+        # Check admin permission
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({
+                "error": "Admin access required for package creation"
+            }, status=status.HTTP_403_FORBIDDEN)
+            
         data = request.data
         
         try:
@@ -308,13 +315,13 @@ class AdminPackageManagementAPIView(APIView):
 
 class AdminIndividualPackageAPIView(APIView):
     """
-    Individual Package Management - GET/PUT/DELETE specific package (Now Public Access)
+    Individual Package Management - GET is public, PUT/DELETE require admin access
     """
-    permission_classes = [permissions.AllowAny]  # Made public - no authentication required
+    permission_classes = [permissions.AllowAny]  # Allow public access, check admin in individual methods
     
     @swagger_auto_schema(
-        tags=['Package Management'],
-        operation_summary="Get Single Package",
+        tags=['Package Management - Public'],
+        operation_summary="Get Single Package (Public)",
         operation_description="Get details of a specific package - PUBLIC ACCESS (No Auth Required)",
         responses={
             200: "Package details",
@@ -323,7 +330,8 @@ class AdminIndividualPackageAPIView(APIView):
         }
     )
     def get(self, request, package_id):
-        """Get single package details"""
+        """Get single package details - Public access allowed"""
+        # No authentication required for viewing single package
         try:
             package = SubscriptionPlan.objects.get(id=package_id)
             
@@ -386,7 +394,13 @@ class AdminIndividualPackageAPIView(APIView):
         }
     )
     def put(self, request, package_id):
-        """Update package"""
+        """Update package - Admin only"""
+        # Check admin permission
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({
+                "error": "Admin access required for package updates"
+            }, status=status.HTTP_403_FORBIDDEN)
+            
         try:
             package = SubscriptionPlan.objects.get(id=package_id)
             data = request.data
@@ -449,7 +463,13 @@ class AdminIndividualPackageAPIView(APIView):
         }
     )
     def delete(self, request, package_id):
-        """Delete package"""
+        """Delete package - Admin only"""
+        # Check admin permission
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({
+                "error": "Admin access required for package deletion"
+            }, status=status.HTTP_403_FORBIDDEN)
+            
         try:
             package = SubscriptionPlan.objects.get(id=package_id)
             package_name = package.name

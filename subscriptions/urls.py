@@ -14,18 +14,13 @@ from .usage_alerts_api import (
     UserUsageAlertsAPIView,
     PlanFeatureAccessAPIView
 )
-from .public_packages_api import PublicPackagesAPIView
 
 # 🎯 Clean and organized subscription URLs based on image requirements
 # Meaningful names, organized by user type, focused on essential functionality
 
 urlpatterns = [
-    # 🌐 PUBLIC ACCESS - Package Viewing (No Authentication Required)
-    # Anyone can view available packages before signing up
-    path('packages/', PublicPackagesAPIView.as_view(), name='public-packages'),
-    
-    # 🔐 ADMIN ONLY - Package Management (CRUD)  
-    # Admin creates/manages subscription packages that users can choose from
+    # 🔐 PACKAGE MANAGEMENT - GET is public, POST/PUT/DELETE require admin
+    # Anyone can view packages, only admins can manage them
     path('admin/packages/', AdminPackageManagementAPIView.as_view(), name='admin-packages'),
     path('admin/packages/<uuid:package_id>/', AdminIndividualPackageAPIView.as_view(), name='admin-package-detail'),
     path('admin/statistics/', AdminStatisticsAPIView.as_view(), name='admin-statistics'),
