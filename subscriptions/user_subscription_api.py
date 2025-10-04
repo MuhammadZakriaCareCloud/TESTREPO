@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
 from django.utils import timezone
+from django.db.models import Count
 from datetime import timedelta
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -17,9 +18,9 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class UserPackageSelectionAPIView(APIView):
     """
-    User Package Selection - Get available packages for users to choose from
+    User Package Selection - Get available packages for users to choose from (Public Access)
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Made public to match admin API
     
     @swagger_auto_schema(
         tags=['User - Package Selection'],
@@ -54,50 +55,56 @@ class UserPackageSelectionAPIView(APIView):
         }
     )
     def get(self, request):
-        """Get all available packages for user selection"""
-        packages = SubscriptionPlan.objects.filter(
-            is_active=True
-        ).order_by('sort_order', 'price')
+        """Get all available packages for user selection - Same format as admin API"""
+        packages = SubscriptionPlan.objects.annotate(
+            subscriber_count=Count('subscription')
+        ).order_by('-created_at')
         
         package_data = []
         for package in packages:
-            # Main features structure for frontend
+            # Prepare features object - Same structure as admin API
             features = {
-                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number - campaign capacity
                 'api_access': package.api_access,  # boolean
                 'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
-            # Extended features for display (optional)
+            # Extended features for comprehensive details - Same as admin API
             extended_features = {
-                'ai_agents': package.ai_agents_allowed,
+                'ai_agents_allowed': package.ai_agents_allowed,
                 'concurrent_calls': package.concurrent_calls,
-                'call_recording': package.call_recording,
-                'call_transcription': package.call_transcription,
-                'analytics': package.analytics_access,
                 'advanced_analytics': package.advanced_analytics,
                 'api_access': package.api_access,
+                'webhook_access': package.webhook_access,
+                'call_recording': package.call_recording,
+                'call_transcription': package.call_transcription,
+                'sentiment_analysis': package.sentiment_analysis,
+                'auto_campaigns': package.auto_campaigns,
+                'crm_integration': package.crm_integration,
                 'storage_gb': package.storage_gb,
+                'backup_retention_days': package.backup_retention_days,
                 'priority_support': package.priority_support,
             }
             
             package_data.append({
-                'id': str(package.id),
+                'id': str(package.id),  # TypeScript expects string | number
                 'name': package.name,
-                'plan_type': package.plan_type,
-                'price_monthly': float(package.price),
+                'price_monthly': float(package.price),  # TypeScript expects number | string
+                'minutes_inbound_limit': package.minutes_inbound_limit,
+                'minutes_outbound_limit': package.minutes_outbound_limit,
                 'minutes_total_limit': package.call_minutes_limit,
                 'agents_allowed': package.agents_allowed,
                 'analytics_access': package.analytics_access,
                 'features': features,  # Main features structure
                 'extended_features': extended_features,  # Comprehensive features
-                'is_popular': package.is_popular,
-                'stripe_price_id': package.stripe_price_id,
+                'is_active': package.is_active,
+                'created_at': package.created_at.isoformat(),  # ISO string format
+                'subscribers': package.subscriber_count,  # Subscriber count
             })
         
         return Response({
             'success': True,
-            'message': f'Found {len(package_data)} available packages',
+            'message': f'Found {len(package_data)} packages',
             'packages': package_data
         }, status=status.HTTP_200_OK)
     
