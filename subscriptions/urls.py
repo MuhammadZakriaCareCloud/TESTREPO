@@ -14,6 +14,7 @@ from .usage_alerts_api import (
     UserUsageAlertsAPIView,
     PlanFeatureAccessAPIView
 )
+from .payment_methods_api import PaymentMethodsAPIView, PaymentMethodDetailAPIView
 
 # 🎯 Clean and organized subscription URLs based on image requirements
 # Meaningful names, organized by user type, focused on essential functionality
@@ -37,6 +38,10 @@ urlpatterns = [
     # 📊 USAGE & ALERTS - Monitor usage and plan restrictions
     path('user/usage-alerts/', UserUsageAlertsAPIView.as_view(), name='user-usage-alerts'),
     path('user/feature-access/', PlanFeatureAccessAPIView.as_view(), name='user-feature-access'),
+    
+    # 💳 PAYMENT METHODS MANAGEMENT - List, add, update, remove payment methods
+    path('api/payment-methods/', PaymentMethodsAPIView.as_view(), name='payment-methods'),
+    path('api/payment-methods/<uuid:pm_id>/', PaymentMethodDetailAPIView.as_view(), name='payment-method-detail'),
     
     # 💳 STRIPE INTEGRATION
     # Webhook for handling Stripe events (payment success/failure, subscription updates)
