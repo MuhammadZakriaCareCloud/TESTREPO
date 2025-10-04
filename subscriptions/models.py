@@ -106,9 +106,9 @@ class SubscriptionPlan(models.Model):
     def features(self):
         """Return features in the required structure for frontend"""
         return {
-            'campaigns': self.auto_campaigns,
-            'api_access': self.api_access,
-            'advanced_analytics': self.advanced_analytics if self.analytics_access else False,
+            'campaigns': self.concurrent_calls if self.auto_campaigns else 0,  # number - campaign capacity
+            'api_access': self.api_access,  # boolean
+            'advanced_analytics': self.advanced_analytics if self.analytics_access else False,  # boolean
         }
     
     def create_stripe_product(self):

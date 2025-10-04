@@ -63,9 +63,9 @@ class UserPackageSelectionAPIView(APIView):
         for package in packages:
             # Main features structure for frontend
             features = {
-                'campaigns': package.auto_campaigns,
-                'api_access': package.api_access,
-                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                'api_access': package.api_access,  # boolean
+                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
             # Extended features for display (optional)
@@ -777,9 +777,9 @@ class UserSubscribeAPIView(APIView):
                     'plan_name': package.name,
                     'status': subscription.status,
                     'features': {
-                        'campaigns': package.auto_campaigns,
-                        'api_access': package.api_access,
-                        'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                        'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                        'api_access': package.api_access,  # boolean
+                        'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
                     }
                 }
             }, status=status.HTTP_200_OK)

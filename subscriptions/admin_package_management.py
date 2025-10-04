@@ -39,15 +39,17 @@ class AdminPackageManagementAPIView(APIView):
                                     'id': openapi.Schema(type=openapi.TYPE_STRING),
                                     'name': openapi.Schema(type=openapi.TYPE_STRING),
                                     'price_monthly': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'minutes_inbound_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'minutes_outbound_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
                                     'minutes_total_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
                                     'agents_allowed': openapi.Schema(type=openapi.TYPE_INTEGER),
                                     'analytics_access': openapi.Schema(type=openapi.TYPE_BOOLEAN),
                                     'features': openapi.Schema(
                                         type=openapi.TYPE_OBJECT,
                                         properties={
-                                            'campaigns': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                                            'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                                            'advanced_analytics': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                            'campaigns': openapi.Schema(type=openapi.TYPE_INTEGER, description="Campaign capacity (number)"),
+                                            'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="API access permission"),
+                                            'advanced_analytics': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Advanced analytics access"),
                                         }
                                     ),
                                     'extended_features': openapi.Schema(type=openapi.TYPE_OBJECT, description="Comprehensive feature details"),
@@ -71,11 +73,11 @@ class AdminPackageManagementAPIView(APIView):
         
         package_data = []
         for package in packages:
-            # Prepare features object - Main structure for frontend
+            # Prepare features object - Updated structure for frontend
             features = {
-                'campaigns': package.auto_campaigns,
-                'api_access': package.api_access,
-                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number - campaign capacity
+                'api_access': package.api_access,  # boolean
+                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
             # Extended features for comprehensive details  
@@ -132,12 +134,13 @@ class AdminPackageManagementAPIView(APIView):
                 'minutes_total_limit': openapi.Schema(type=openapi.TYPE_INTEGER, description="Total call minutes"),
                 'agents_allowed': openapi.Schema(type=openapi.TYPE_INTEGER, description="Number of agents allowed"),
                 'analytics_access': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Analytics access", default=False),
+                'is_active': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Package active status", default=True),
                 'features': openapi.Schema(
                     type=openapi.TYPE_OBJECT, 
                     description="Package features",
                     properties={
-                        'campaigns': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Campaign feature access"),
-                        'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="API access"),
+                        'campaigns': openapi.Schema(type=openapi.TYPE_INTEGER, description="Campaign capacity (number of campaigns allowed)"),
+                        'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="API access permission"),
                         'advanced_analytics': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Advanced analytics access"),
                     }
                 ),
@@ -157,6 +160,8 @@ class AdminPackageManagementAPIView(APIView):
                                 'id': openapi.Schema(type=openapi.TYPE_STRING),
                                 'name': openapi.Schema(type=openapi.TYPE_STRING),
                                 'price_monthly': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'minutes_inbound_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'minutes_outbound_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
                                 'minutes_total_limit': openapi.Schema(type=openapi.TYPE_INTEGER),
                                 'agents_allowed': openapi.Schema(type=openapi.TYPE_INTEGER),
                                 'analytics_access': openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -218,11 +223,14 @@ class AdminPackageManagementAPIView(APIView):
             # Extract features - Support both structures
             features = data.get('features', {})
             
-            # Main features (campaigns, api_access, advanced_analytics)
-            feat_campaigns = features.get('campaigns', False)
-            api_access = features.get('api_access', False) 
+            # Main features (campaigns as number, api_access, advanced_analytics)
+            campaigns_count = features.get('campaigns', 0)  # number of campaigns allowed
+            api_access = features.get('api_access', False)  # boolean
             analytics_access = data.get('analytics_access', False)
-            advanced_analytics = features.get('advanced_analytics', False)
+            advanced_analytics = features.get('advanced_analytics', False)  # boolean
+            
+            # Set auto_campaigns based on campaigns count
+            auto_campaigns_enabled = campaigns_count > 0
             
             # Create package
             package = SubscriptionPlan.objects.create(
@@ -236,13 +244,13 @@ class AdminPackageManagementAPIView(APIView):
                 analytics_access=analytics_access,
                 
                 # Main features mapping
-                auto_campaigns=feat_campaigns,  # campaigns -> auto_campaigns
-                api_access=api_access,  # api_access -> api_access
-                advanced_analytics=advanced_analytics if analytics_access else False,  # advanced_analytics (conditional)
+                auto_campaigns=auto_campaigns_enabled,  # campaigns -> auto_campaigns (boolean)
+                api_access=api_access,  # api_access -> api_access (boolean)
+                advanced_analytics=advanced_analytics if analytics_access else False,  # advanced_analytics (boolean)
                 
                 # Extended features from features object (backward compatibility)
                 ai_agents_allowed=features.get('ai_agents_allowed', 1),
-                concurrent_calls=features.get('concurrent_calls', 5),
+                concurrent_calls=max(campaigns_count, features.get('concurrent_calls', 5)),  # Use campaigns count as concurrent calls
                 webhook_access=features.get('webhook_access', False),
                 call_recording=features.get('call_recording', False),
                 call_transcription=features.get('call_transcription', False),
@@ -256,14 +264,14 @@ class AdminPackageManagementAPIView(APIView):
                 stripe_product_id=stripe_product_id,
                 stripe_price_id=stripe_price_id,
                 
-                is_active=True
+                is_active=data.get('is_active', True)
             )
             
             # Prepare features response
             package_features = {
-                'campaigns': package.auto_campaigns,
-                'api_access': package.api_access,
-                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                'api_access': package.api_access,  # boolean
+                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
             return Response({
@@ -273,6 +281,8 @@ class AdminPackageManagementAPIView(APIView):
                     'id': str(package.id),
                     'name': package.name,
                     'price_monthly': float(package.price),
+                    'minutes_inbound_limit': package.minutes_inbound_limit,
+                    'minutes_outbound_limit': package.minutes_outbound_limit,
                     'minutes_total_limit': package.call_minutes_limit,
                     'agents_allowed': package.agents_allowed,
                     'analytics_access': package.analytics_access,
@@ -319,9 +329,9 @@ class AdminIndividualPackageAPIView(APIView):
             
             # Prepare features
             features = {
-                'campaigns': package.auto_campaigns,
-                'api_access': package.api_access,
-                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                'api_access': package.api_access,  # boolean
+                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
             package_data = {
@@ -358,12 +368,13 @@ class AdminIndividualPackageAPIView(APIView):
             properties={
                 'name': openapi.Schema(type=openapi.TYPE_STRING),
                 'price_monthly': openapi.Schema(type=openapi.TYPE_NUMBER),
+                'is_active': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Package active status"),
                 'features': openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        'campaigns': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        'advanced_analytics': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'campaigns': openapi.Schema(type=openapi.TYPE_INTEGER, description="Campaign capacity (number)"),
+                        'api_access': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="API access permission"),
+                        'advanced_analytics': openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Advanced analytics access"),
                     }
                 ),
             }
@@ -385,24 +396,28 @@ class AdminIndividualPackageAPIView(APIView):
                 package.name = data['name']
             if 'price_monthly' in data:
                 package.price = data['price_monthly']
+            if 'is_active' in data:
+                package.is_active = data['is_active']
             
             # Update features if provided
             if 'features' in data:
                 features = data['features']
                 if 'campaigns' in features:
-                    package.auto_campaigns = features['campaigns']
+                    campaigns_count = features['campaigns']  # number
+                    package.auto_campaigns = campaigns_count > 0  # boolean
+                    package.concurrent_calls = max(campaigns_count, package.concurrent_calls)  # Update concurrent calls
                 if 'api_access' in features:
-                    package.api_access = features['api_access']
+                    package.api_access = features['api_access']  # boolean
                 if 'advanced_analytics' in features:
-                    package.advanced_analytics = features['advanced_analytics']
+                    package.advanced_analytics = features['advanced_analytics']  # boolean
             
             package.save()
             
             # Prepare response features
             response_features = {
-                'campaigns': package.auto_campaigns,
-                'api_access': package.api_access,
-                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,
+                'campaigns': package.concurrent_calls if package.auto_campaigns else 0,  # number
+                'api_access': package.api_access,  # boolean
+                'advanced_analytics': package.advanced_analytics if package.analytics_access else False,  # boolean
             }
             
             return Response({
